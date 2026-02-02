@@ -119,15 +119,30 @@
         });
 
         async function startQuiz() {
-            const name = document.getElementById('userName').value, roll = document.getElementById('rollNo').value;
+            const name = document.getElementById('userName').value;
+            const roll = document.getElementById('rollNo').value;
             if(!name || !roll) return alert("Please enter your name and roll number.");
-
+        
+            // 1. Fetch questions from Firestore
             const qSnap = await db.collection('questions').get();
-            questions = qSnap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+            let fetchedQuestions = qSnap.docs.map(doc => ({id: doc.id, ...doc.data()}));
             
+            if(fetchedQuestions.length === 0) return alert("No questions available.");
+        
+            // 2. Shuffle the array (Fisher-Yates Algorithm)
+            // This ensures they are randomized without being repeated
+            for (let i = fetchedQuestions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [fetchedQuestions[i], fetchedQuestions[j]] = [fetchedQuestions[j], fetchedQuestions[i]];
+            }
+        
+            // 3. Set the global questions variable to the shuffled list
+            questions = fetchedQuestions;
+        
             document.getElementById('welcome-screen').classList.add('hidden');
             document.getElementById('quiz-screen').classList.remove('hidden');
-            showQuestion(); startTimer();
+            showQuestion(); 
+            startTimer();
         }
 
         function showQuestion() {
