@@ -2,62 +2,81 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Quiz Admin | NITC</title>
+    <title>PoSH Admin | NITC</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-50 min-h-screen">
 
     <div id="login-screen" class="flex items-center justify-center min-h-screen">
-        <div class="bg-white p-10 rounded-3xl shadow-2xl text-center">
-            <h1 class="text-2xl font-black mb-6">Admin Portal</h1>
-            <button onclick="login()" class="bg-indigo-600 text-white px-10 py-3 rounded-xl font-bold">Sign in with Google</button>
+        <div class="bg-white p-12 rounded-3xl shadow-2xl text-center">
+            <h1 class="text-3xl font-black mb-8 text-slate-800">Admin Login</h1>
+            <button onclick="login()" class="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-bold shadow-lg">Sign in with Google</button>
         </div>
     </div>
 
     <div id="dashboard" class="hidden p-8 max-w-7xl mx-auto">
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-6 bg-white p-6 rounded-2xl shadow-sm">
             <div class="flex items-center gap-6">
-                <h1 class="text-3xl font-black text-slate-800">Control Panel</h1>
-                <div class="flex items-center gap-4 bg-white px-4 py-2 rounded-xl shadow-sm border">
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-slate-400 uppercase">Status:</span>
-                        <button id="toggle-btn" onclick="toggleQuiz()" class="text-xs font-black px-4 py-1 rounded-full bg-red-500 text-white transition">OFFLINE</button>
-                    </div>
-                    <div class="h-6 w-px bg-slate-200"></div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-slate-400 uppercase">Duration:</span>
-                        <input type="number" id="quiz-duration-input" placeholder="Mins" class="w-16 p-1 text-xs border rounded text-center font-bold">
-                        <button onclick="updateDuration()" class="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-2 py-1 rounded font-bold uppercase">Set</button>
-                    </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Quiz Status:</span>
+                    <button id="toggle-btn" onclick="toggleQuiz()" class="text-xs font-black px-6 py-2 rounded-full bg-red-500 text-white transition">OFFLINE</button>
+                </div>
+                <div class="h-8 w-px bg-slate-200"></div>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Quiz Timer:</span>
+                    <input type="number" id="quiz-duration-input" class="w-16 p-2 text-center border rounded-lg font-bold text-indigo-600">
+                    <button onclick="updateDuration()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-xs font-bold border border-indigo-100">SET MINS</button>
                 </div>
             </div>
-            <button onclick="logout()" class="text-red-500 font-bold">Sign Out</button>
+            <button onclick="logout()" class="text-red-500 font-bold hover:underline">Logout</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl border text-center">
+                <p class="text-xs font-bold text-slate-400 uppercase mb-2">Informative Avg</p>
+                <h3 id="avg-inf" class="text-4xl font-black text-indigo-600">0.0</h3>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border text-center">
+                <p class="text-xs font-bold text-slate-400 uppercase mb-2">Organised Avg</p>
+                <h3 id="avg-org" class="text-4xl font-black text-emerald-600">0.0</h3>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border text-center">
+                <p class="text-xs font-bold text-slate-400 uppercase mb-2">Overall Rating</p>
+                <h3 id="avg-rate" class="text-4xl font-black text-amber-500">0.0</h3>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="bg-white p-6 rounded-2xl shadow-sm border h-fit">
-                <h2 class="font-bold text-lg mb-4">Add Question</h2>
+                <h2 class="font-bold text-lg mb-6 text-slate-800">Add New Question</h2>
                 <div class="space-y-4">
-                    <input type="text" id="q-text" placeholder="Question text" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-                    <input type="text" id="q-opts" placeholder="Option A, Option B, Option C" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-                    <input type="text" id="q-ans" placeholder="Correct Answer" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-                    <input type="number" id="q-pts" placeholder="Points" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-                    <button onclick="addQuestion()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700">Add to Quiz</button>
+                    <textarea id="q-text" placeholder="Question Text" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    <input type="text" id="q-opts" placeholder="Option A, Option B, Option C, Option D" class="w-full p-4 border rounded-xl">
+                    <input type="text" id="q-ans" placeholder="Exact Correct Answer" class="w-full p-4 border rounded-xl">
+                    <input type="number" id="q-pts" placeholder="Points" class="w-full p-4 border rounded-xl">
+                    <button onclick="addQuestion()" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-md">Add to Quiz</button>
                 </div>
-                <div id="q-list" class="mt-8 space-y-2 overflow-y-auto max-h-60"></div>
+                <div id="q-list" class="mt-8 space-y-3 overflow-y-auto max-h-80"></div>
             </div>
 
             <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="font-bold text-lg">Results</h2>
-                    <button onclick="downloadCSV()" class="bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-bold">Export CSV</button>
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="font-bold text-lg">Student Results</h2>
+                    <button onclick="downloadCSV()" class="bg-slate-800 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-lg">Download Responses (CSV)</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
-                        <thead><tr class="text-slate-400 text-xs uppercase border-b"><th class="p-3">Roll</th><th class="p-3">Name</th><th class="p-3">Score</th><th class="p-3">Actions</th></tr></thead>
+                        <thead class="bg-slate-50 border-b">
+                            <tr class="text-slate-400 text-[10px] uppercase font-bold">
+                                <th class="p-4">Roll No</th>
+                                <th class="p-4">Name</th>
+                                <th class="p-4">Quiz Score</th>
+                                <th class="p-4">Action</th>
+                            </tr>
+                        </thead>
                         <tbody id="leaderboard-body"></tbody>
                     </table>
                 </div>
@@ -86,9 +105,7 @@
                     document.getElementById('login-screen').classList.add('hidden');
                     document.getElementById('dashboard').classList.remove('hidden');
                     setupLiveListeners();
-                } else {
-                    alert("Unauthorized!"); auth.signOut();
-                }
+                } else { alert("Unauthorized!"); auth.signOut(); }
             });
         }
 
@@ -102,14 +119,12 @@
             const mins = document.getElementById('quiz-duration-input').value;
             if(!mins) return alert("Enter minutes");
             await db.collection('settings').doc('quizStatus').update({ duration: parseInt(mins) });
-            alert("Time set to " + mins + " minutes");
+            alert("Duration updated.");
         }
 
         async function addQuestion() {
-            const text = document.getElementById('q-text').value;
-            const optInput = document.getElementById('q-opts').value;
-            const ans = document.getElementById('q-ans').value.trim();
-            const pts = document.getElementById('q-pts').value;
+            const text = document.getElementById('q-text').value, optInput = document.getElementById('q-opts').value;
+            const ans = document.getElementById('q-ans').value.trim(), pts = document.getElementById('q-pts').value;
             if(!text || !optInput || !ans) return alert("Fill all fields");
             const options = optInput.split(',').map(o => o.trim());
             await db.collection('questions').add({ text, options, correct: ans, points: parseInt(pts)||1 });
@@ -117,47 +132,65 @@
         }
 
         function setupLiveListeners() {
+            // Status/Time Listener
             db.collection('settings').doc('quizStatus').onSnapshot(doc => {
                 if(!doc.exists) return;
                 const d = doc.data();
                 const btn = document.getElementById('toggle-btn');
                 btn.innerText = d.active ? "ACTIVE" : "OFFLINE";
-                btn.className = d.active ? "text-xs font-black px-4 py-1 rounded-full bg-emerald-500 text-white shadow-lg" : "text-xs font-black px-4 py-1 rounded-full bg-red-500 text-white";
+                btn.className = d.active ? "text-xs font-black px-6 py-2 rounded-full bg-emerald-500 text-white shadow-lg" : "text-xs font-black px-6 py-2 rounded-full bg-red-500 text-white";
                 document.getElementById('quiz-duration-input').value = d.duration || 10;
             });
 
-            db.collection('questions').onSnapshot(snap => {
-                const list = document.getElementById('q-list');
-                list.innerHTML = '<h3 class="text-xs font-bold text-slate-400 mb-2 uppercase">Quiz Content</h3>';
-                snap.forEach(doc => {
-                    list.innerHTML += `<div class="p-3 bg-gray-50 rounded-xl border flex justify-between items-center text-sm"><span class="truncate w-32">${doc.data().text}</span><button onclick="deleteQ('${doc.id}')" class="text-red-500 font-bold">Delete</button></div>`;
-                });
-            });
-
-            db.collection('submissions').orderBy('score', 'desc').onSnapshot(snap => {
+            // Summary Ratings and Leaderboard
+            db.collection('submissions').onSnapshot(snap => {
+                let tInf = 0, tOrg = 0, tRate = 0, count = 0;
                 const body = document.getElementById('leaderboard-body');
                 body.innerHTML = '';
+
                 snap.forEach(doc => {
                     const s = doc.data();
-                    body.innerHTML += `<tr class="border-b hover:bg-slate-50"><td class="p-3 text-sm font-mono">${s.rollNo}</td><td class="p-3 text-sm font-bold text-slate-700">${s.name}</td><td class="p-3 text-indigo-600 font-black">${s.score}</td><td class="p-3"><button onclick="deleteSub('${doc.id}')" class="text-xs text-red-400">Clear</button></td></tr>`;
+                    if(s.feedback) {
+                        tInf += parseInt(s.feedback.inf || 0);
+                        tOrg += parseInt(s.feedback.org || 0);
+                        tRate += parseInt(s.feedback.rate || 0);
+                        count++;
+                    }
+                    body.innerHTML += `<tr class="border-b hover:bg-slate-50 transition"><td class="p-4 font-mono text-xs">${s.rollNo}</td><td class="p-4 font-bold text-slate-700">${s.name}</td><td class="p-4 text-indigo-600 font-black">${s.score}</td><td class="p-4"><button onclick="deleteEntry('${doc.id}')" class="text-red-400 text-[10px] font-bold">CLEAR</button></td></tr>`;
+                });
+
+                if(count > 0) {
+                    document.getElementById('avg-inf').innerText = (tInf/count).toFixed(1);
+                    document.getElementById('avg-org').innerText = (tOrg/count).toFixed(1);
+                    document.getElementById('avg-rate').innerText = (tRate/count).toFixed(1);
+                }
+            });
+
+            // Question List
+            db.collection('questions').onSnapshot(snap => {
+                const list = document.getElementById('q-list');
+                list.innerHTML = '<h3 class="text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest">Added Questions</h3>';
+                snap.forEach(doc => {
+                    list.innerHTML += `<div class="p-3 bg-slate-50 border rounded-xl flex justify-between items-center text-xs font-medium text-slate-600"><span>${doc.data().text.substring(0,30)}...</span><button onclick="deleteQ('${doc.id}')" class="text-red-500 font-black">X</button></div>`;
                 });
             });
         }
 
         async function deleteQ(id) { if(confirm("Delete question?")) await db.collection('questions').doc(id).delete(); }
-        async function deleteSub(id) { if(confirm("Clear entry?")) await db.collection('submissions').doc(id).delete(); }
+        async function deleteEntry(id) { if(confirm("Clear this submission?")) await db.collection('submissions').doc(id).delete(); }
 
         async function downloadCSV() {
             const snap = await db.collection('submissions').get();
-            let csv = "Name,RollNo,Score,Difficulty,Time,Suggestions\n";
+            let csv = "Name,RollNo,QuizScore,InformativeRating,OrganisedRating,OverallRating,Timestamp\n";
             snap.forEach(doc => {
                 const s = doc.data();
-                csv += `"${s.name}","${s.rollNo}",${s.score},"${s.feedback.d}","${s.feedback.t}","${s.feedback.s}"\n`;
+                const ts = s.timestamp ? s.timestamp.toDate().toLocaleString() : "N/A";
+                csv += `"${s.name}","${s.rollNo}",${s.score},${s.feedback.inf},${s.feedback.org},${s.feedback.rate},"${ts}"\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url; a.download = 'results.csv'; a.click();
+            a.href = url; a.download = 'posh_program_responses.csv'; a.click();
         }
 
         function logout() { auth.signOut(); location.reload(); }
