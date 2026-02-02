@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PoSH Admin | NITC</title>
+    <title>PoSH Admin | NITC Control Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -12,72 +12,77 @@
 
     <div id="login-screen" class="flex items-center justify-center min-h-screen">
         <div class="bg-white p-12 rounded-3xl shadow-2xl text-center">
-            <h1 class="text-3xl font-black mb-8 text-slate-800">Admin Login</h1>
-            <button onclick="login()" class="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-bold shadow-lg">Sign in with Google</button>
+            <h1 class="text-3xl font-black mb-8 text-slate-800 tracking-tight">Admin Portal</h1>
+            <button onclick="login()" class="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-bold shadow-lg hover:bg-indigo-700 transition">Sign in with Google</button>
         </div>
     </div>
 
     <div id="dashboard" class="hidden p-8 max-w-7xl mx-auto">
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-6 bg-white p-6 rounded-2xl shadow-sm">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-6 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <div class="flex items-center gap-6">
                 <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-400 uppercase">Quiz Status:</span>
-                    <button id="toggle-btn" onclick="toggleQuiz()" class="text-xs font-black px-6 py-2 rounded-full bg-red-500 text-white transition">OFFLINE</button>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Quiz Status:</span>
+                    <button id="toggle-btn" onclick="toggleQuiz()" class="text-xs font-black px-6 py-2 rounded-full bg-red-500 text-white transition shadow-sm">OFFLINE</button>
                 </div>
                 <div class="h-8 w-px bg-slate-200"></div>
                 <div class="flex items-center gap-3">
-                    <span class="text-xs font-bold text-slate-400 uppercase">Quiz Timer:</span>
-                    <input type="number" id="quiz-duration-input" class="w-16 p-2 text-center border rounded-lg font-bold text-indigo-600">
-                    <button onclick="updateDuration()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-xs font-bold border border-indigo-100">SET MINS</button>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Duration:</span>
+                    <input type="number" id="quiz-duration-input" class="w-16 p-2 text-center border rounded-lg font-bold text-indigo-600 focus:ring-2 focus:ring-indigo-400 outline-none">
+                    <button onclick="updateDuration()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-xs font-bold border border-indigo-100 hover:bg-indigo-100 transition">SET MINS</button>
                 </div>
             </div>
-            <button onclick="logout()" class="text-red-500 font-bold hover:underline">Logout</button>
+            <button onclick="logout()" class="text-red-500 font-bold hover:text-red-700 transition">Logout</button>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-2xl border text-center">
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 text-center shadow-sm">
                 <p class="text-xs font-bold text-slate-400 uppercase mb-2">Informative Avg</p>
                 <h3 id="avg-inf" class="text-4xl font-black text-indigo-600">0.0</h3>
             </div>
-            <div class="bg-white p-6 rounded-2xl border text-center">
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 text-center shadow-sm">
                 <p class="text-xs font-bold text-slate-400 uppercase mb-2">Organised Avg</p>
                 <h3 id="avg-org" class="text-4xl font-black text-emerald-600">0.0</h3>
             </div>
-            <div class="bg-white p-6 rounded-2xl border text-center">
-                <p class="text-xs font-bold text-slate-400 uppercase mb-2">Overall Rating</p>
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 text-center shadow-sm">
+                <p class="text-xs font-bold text-slate-400 uppercase mb-2">Overall Program Rating</p>
                 <h3 id="avg-rate" class="text-4xl font-black text-amber-500">0.0</h3>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border h-fit">
-                <h2 class="font-bold text-lg mb-6 text-slate-800">Add New Question</h2>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-fit">
+                <h2 id="form-title" class="font-bold text-lg mb-6 text-slate-800">Add New Question</h2>
                 <div class="space-y-4">
-                    <textarea id="q-text" placeholder="Question Text" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-                    <input type="text" id="q-opts" placeholder="Option A, Option B, Option C, Option D" class="w-full p-4 border rounded-xl">
-                    <input type="text" id="q-ans" placeholder="Exact Correct Answer" class="w-full p-4 border rounded-xl">
-                    <input type="number" id="q-pts" placeholder="Points" class="w-full p-4 border rounded-xl">
-                    <button onclick="addQuestion()" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-md">Add to Quiz</button>
+                    <input type="hidden" id="edit-id">
+                    <textarea id="q-text" placeholder="Question Text" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 min-h-[100px]"></textarea>
+                    <input type="text" id="q-opts" placeholder="Option A, Option B, Option C, Option D" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="text" id="q-ans" placeholder="Correct Answer (Exact Match)" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="number" id="q-pts" placeholder="Points (default 1)" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                    
+                    <div class="flex gap-2">
+                        <button id="submit-btn" onclick="saveQuestion()" class="flex-1 bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-md hover:bg-indigo-700 transition">Save Question</button>
+                        <button id="cancel-edit" onclick="resetForm()" class="hidden bg-slate-100 text-slate-600 px-4 py-4 rounded-xl font-bold border hover:bg-slate-200 transition">Cancel</button>
+                    </div>
                 </div>
-                <div id="q-list" class="mt-8 space-y-3 overflow-y-auto max-h-80"></div>
+                <div id="q-list" class="mt-8 space-y-3 overflow-y-auto max-h-[400px]"></div>
             </div>
 
-            <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border">
+            <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div class="flex justify-between items-center mb-8">
-                    <h2 class="font-bold text-lg">Student Results</h2>
-                    <button onclick="downloadCSV()" class="bg-slate-800 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-lg">Download Responses (CSV)</button>
+                    <h2 class="font-bold text-lg text-slate-800">Student Responses</h2>
+                    <button onclick="downloadCSV()" class="bg-slate-800 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-lg hover:bg-black transition">Export CSV</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
                         <thead class="bg-slate-50 border-b">
-                            <tr class="text-slate-400 text-[10px] uppercase font-bold">
-                                <th class="p-4">Roll No</th>
-                                <th class="p-4">Name</th>
-                                <th class="p-4">Quiz Score</th>
-                                <th class="p-4">Action</th>
+                            <tr class="text-slate-400 text-[10px] uppercase font-bold tracking-widest">
+                                <th class="p-4">Roll Number</th>
+                                <th class="p-4">Full Name</th>
+                                <th class="p-4">Score</th>
+                                <th class="p-4">Manage</th>
                             </tr>
                         </thead>
-                        <tbody id="leaderboard-body"></tbody>
+                        <tbody id="leaderboard-body" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
@@ -105,8 +110,8 @@
                     document.getElementById('login-screen').classList.add('hidden');
                     document.getElementById('dashboard').classList.remove('hidden');
                     setupLiveListeners();
-                } else { alert("Unauthorized!"); auth.signOut(); }
-            });
+                } else { alert("Unauthorized access. Admin only."); auth.signOut(); }
+            }).catch(err => alert("Login Error: " + err.message));
         }
 
         async function toggleQuiz() {
@@ -117,18 +122,54 @@
 
         async function updateDuration() {
             const mins = document.getElementById('quiz-duration-input').value;
-            if(!mins) return alert("Enter minutes");
+            if(!mins) return alert("Please enter duration in minutes.");
             await db.collection('settings').doc('quizStatus').update({ duration: parseInt(mins) });
-            alert("Duration updated.");
+            alert("Quiz duration set to " + mins + " minutes.");
         }
 
-        async function addQuestion() {
-            const text = document.getElementById('q-text').value, optInput = document.getElementById('q-opts').value;
-            const ans = document.getElementById('q-ans').value.trim(), pts = document.getElementById('q-pts').value;
-            if(!text || !optInput || !ans) return alert("Fill all fields");
+        async function saveQuestion() {
+            const id = document.getElementById('edit-id').value;
+            const text = document.getElementById('q-text').value;
+            const optInput = document.getElementById('q-opts').value;
+            const ans = document.getElementById('q-ans').value.trim();
+            const pts = document.getElementById('q-pts').value;
+
+            if(!text || !optInput || !ans) return alert("Please fill the Question, Options, and Answer.");
             const options = optInput.split(',').map(o => o.trim());
-            await db.collection('questions').add({ text, options, correct: ans, points: parseInt(pts)||1 });
-            document.getElementById('q-text').value = ''; document.getElementById('q-opts').value = ''; document.getElementById('q-ans').value = '';
+
+            const data = { text, options, correct: ans, points: parseInt(pts) || 1 };
+
+            if(id) {
+                await db.collection('questions').doc(id).update(data);
+                alert("Question Updated!");
+            } else {
+                await db.collection('questions').add(data);
+                alert("Question Added!");
+            }
+            resetForm();
+        }
+
+        function editQuestion(id, data) {
+            document.getElementById('form-title').innerText = "Edit Question";
+            document.getElementById('edit-id').value = id;
+            document.getElementById('q-text').value = data.text;
+            document.getElementById('q-opts').value = data.options.join(', ');
+            document.getElementById('q-ans').value = data.correct;
+            document.getElementById('q-pts').value = data.points;
+            document.getElementById('submit-btn').innerText = "Update Question";
+            document.getElementById('cancel-edit').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            document.getElementById('form-title').innerText = "Add New Question";
+            document.getElementById('edit-id').value = "";
+            document.getElementById('q-text').value = "";
+            document.getElementById('q-opts').value = "";
+            document.getElementById('q-ans').value = "";
+            document.getElementById('q-pts').value = "";
+            document.getElementById('submit-btn').innerText = "Save Question";
+            document.getElementById('cancel-edit').classList.add('hidden');
         }
 
         function setupLiveListeners() {
@@ -142,7 +183,7 @@
                 document.getElementById('quiz-duration-input').value = d.duration || 10;
             });
 
-            // Summary Ratings and Leaderboard
+            // Summary Ratings & Leaderboard
             db.collection('submissions').onSnapshot(snap => {
                 let tInf = 0, tOrg = 0, tRate = 0, count = 0;
                 const body = document.getElementById('leaderboard-body');
@@ -156,7 +197,13 @@
                         tRate += parseInt(s.feedback.rate || 0);
                         count++;
                     }
-                    body.innerHTML += `<tr class="border-b hover:bg-slate-50 transition"><td class="p-4 font-mono text-xs">${s.rollNo}</td><td class="p-4 font-bold text-slate-700">${s.name}</td><td class="p-4 text-indigo-600 font-black">${s.score}</td><td class="p-4"><button onclick="deleteEntry('${doc.id}')" class="text-red-400 text-[10px] font-bold">CLEAR</button></td></tr>`;
+                    body.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-4 font-mono text-xs text-slate-500">${s.rollNo}</td>
+                        <td class="p-4 font-bold text-slate-700">${s.name}</td>
+                        <td class="p-4 text-indigo-600 font-black">${s.score}</td>
+                        <td class="p-4"><button onclick="deleteEntry('${doc.id}')" class="text-red-400 text-[10px] font-black tracking-tighter hover:text-red-600 transition">CLEAR</button></td>
+                    </tr>`;
                 });
 
                 if(count > 0) {
@@ -171,12 +218,21 @@
                 const list = document.getElementById('q-list');
                 list.innerHTML = '<h3 class="text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest">Added Questions</h3>';
                 snap.forEach(doc => {
-                    list.innerHTML += `<div class="p-3 bg-slate-50 border rounded-xl flex justify-between items-center text-xs font-medium text-slate-600"><span>${doc.data().text.substring(0,30)}...</span><button onclick="deleteQ('${doc.id}')" class="text-red-500 font-black">X</button></div>`;
+                    const qData = doc.data();
+                    const div = document.createElement('div');
+                    div.className = "p-4 bg-slate-50 border rounded-xl flex justify-between items-center text-xs font-medium text-slate-600 shadow-sm";
+                    div.innerHTML = `
+                        <span class="truncate w-32 font-bold">${qData.text}</span>
+                        <div class="flex gap-2">
+                            <button onclick='editQuestion("${doc.id}", ${JSON.stringify(qData)})' class="text-indigo-600 font-black">EDIT</button>
+                            <button onclick='deleteQ("${doc.id}")' class="text-red-500 font-black">X</button>
+                        </div>`;
+                    list.appendChild(div);
                 });
             });
         }
 
-        async function deleteQ(id) { if(confirm("Delete question?")) await db.collection('questions').doc(id).delete(); }
+        async function deleteQ(id) { if(confirm("Permanently delete this question?")) await db.collection('questions').doc(id).delete(); }
         async function deleteEntry(id) { if(confirm("Clear this submission?")) await db.collection('submissions').doc(id).delete(); }
 
         async function downloadCSV() {
