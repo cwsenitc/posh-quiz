@@ -3,72 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NITC Quiz Portal</title>
+    <title>NITC Quiz Portal | Student</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
-<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4 font-sans">
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
 
-    <div id="welcome-screen" class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border-b-8 border-indigo-600">
+    <div id="welcome-screen" class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border-t-8 border-indigo-600">
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-extrabold text-indigo-900">Student Login</h1>
-            <p class="text-slate-500 mt-2">Enter your credentials to begin the quiz</p>
+            <h1 class="text-3xl font-black text-slate-800">Student Login</h1>
+            <p class="text-slate-500">Enter details to enter the hall</p>
         </div>
-        <div class="space-y-5">
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
-                <input type="text" id="userName" placeholder="e.g. John Doe" class="w-full p-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none transition">
+        <div class="space-y-4">
+            <input type="text" id="userName" placeholder="Full Name" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="text" id="rollNo" placeholder="Roll Number" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+            
+            <div id="status-box" class="pt-4 text-center">
+                <div id="wait-msg" class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 font-medium">
+                    <span class="animate-pulse">⏳</span> Quiz is currently locked by Admin...
+                </div>
+                <button id="start-btn" onclick="startQuiz()" class="hidden w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition">
+                    Start Quiz (10 Mins)
+                </button>
             </div>
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Roll Number</label>
-                <input type="text" id="rollNo" placeholder="e.g. B210xxxEE" class="w-full p-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none transition">
-            </div>
-            <button onclick="startQuiz()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform hover:-translate-y-1">Start Quiz (10 Mins)</button>
         </div>
     </div>
 
     <div id="quiz-screen" class="hidden bg-white p-8 rounded-2xl shadow-xl w-full max-w-2xl">
-        <div class="flex justify-between items-center mb-8 pb-4 border-b">
-            <span id="q-count" class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-bold italic">Question 1</span>
-            <div id="timer" class="text-2xl font-black text-red-500 font-mono tracking-tighter">10:00</div>
+        <div class="flex justify-between items-center mb-8 border-b pb-4">
+            <span id="q-count" class="font-bold text-indigo-600 uppercase text-sm tracking-widest">Question 1</span>
+            <div id="timer" class="text-2xl font-black text-red-600 font-mono">10:00</div>
         </div>
-        
-        <div class="mb-10 min-h-[200px]">
-            <h2 id="q-text" class="text-2xl font-bold text-gray-800 leading-tight mb-8"></h2>
-            <div id="options-container" class="grid grid-cols-1 gap-4"></div>
-        </div>
-        
-        <div class="flex justify-end">
-            <button id="next-btn" onclick="nextQuestion()" class="bg-slate-800 text-white px-8 py-3 rounded-xl hover:bg-black transition font-bold">Skip / Next</button>
+        <div class="mb-10 min-h-[150px]">
+            <h2 id="q-text" class="text-2xl font-bold text-slate-800 mb-6 leading-tight"></h2>
+            <div id="options-container" class="grid gap-3"></div>
         </div>
     </div>
 
     <div id="feedback-screen" class="hidden bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-        <h2 class="text-2xl font-bold text-gray-900 mb-2">Quiz Finished!</h2>
-        <p class="text-slate-500 mb-6">Please provide your feedback to submit your score.</p>
-        
+        <h2 class="text-2xl font-bold mb-6">Quiz Finished!</h2>
         <div class="space-y-6">
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">1. How would you rate the difficulty of the questions?</label>
-                <select id="f1" class="w-full p-3 border-2 border-slate-200 rounded-xl outline-none focus:border-indigo-500">
-                    <option value="Easy">Easy</option>
-                    <option value="Moderate">Moderate</option>
-                    <option value="Hard">Hard</option>
-                </select>
+                <label class="block font-bold text-sm text-slate-600 mb-2">1. Rate Difficulty</label>
+                <select id="f1" class="w-full p-3 border rounded-xl"><option>Easy</option><option>Medium</option><option>Hard</option></select>
             </div>
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">2. Was the 10-minute timer sufficient?</label>
-                <div class="flex gap-4">
-                    <label class="flex items-center"><input type="radio" name="f2" value="Yes" checked class="mr-2"> Yes</label>
-                    <label class="flex items-center"><input type="radio" name="f2" value="No" class="mr-2"> No</label>
-                </div>
+                <label class="block font-bold text-sm text-slate-600 mb-2">2. Was time sufficient?</label>
+                <div class="flex gap-4"><label><input type="radio" name="f2" value="Yes" checked> Yes</label><label><input type="radio" name="f2" value="No"> No</label></div>
             </div>
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">3. Any suggestions for improvement?</label>
-                <textarea id="f3" rows="3" class="w-full p-3 border-2 border-slate-200 rounded-xl outline-none focus:border-indigo-500" placeholder="Your thoughts..."></textarea>
+                <label class="block font-bold text-sm text-slate-600 mb-2">3. Suggestions</label>
+                <textarea id="f3" class="w-full p-3 border rounded-xl" placeholder="Optional..."></textarea>
             </div>
-            <button onclick="submitFinal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg transition">Submit All Responses</button>
+            <button onclick="submitFinal()" class="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-md">Submit Everything</button>
         </div>
     </div>
 
@@ -86,21 +74,31 @@
 
         let questions = [];
         let currentIndex = 0;
-        let timeLeft = 600; 
+        let timeLeft = 600;
         let timerInterval;
         let userAnswers = {};
+
+        // Sync Status
+        db.collection('settings').doc('quizStatus').onSnapshot(doc => {
+            const btn = document.getElementById('start-btn');
+            const msg = document.getElementById('wait-msg');
+            if(doc.exists && doc.data().active) {
+                btn.classList.remove('hidden');
+                msg.classList.add('hidden');
+            } else {
+                btn.classList.add('hidden');
+                msg.classList.remove('hidden');
+            }
+        });
 
         async function startQuiz() {
             const name = document.getElementById('userName').value;
             const roll = document.getElementById('rollNo').value;
-            if(!name || !roll) return alert("Please enter your name and roll number.");
+            if(!name || !roll) return alert("Enter details first!");
 
-            // Fetch dynamic quiz questions
             const qSnap = await db.collection('questions').get();
             questions = qSnap.docs.map(doc => ({id: doc.id, ...doc.data()}));
             
-            if(questions.length === 0) return alert("The admin hasn't added any questions yet.");
-
             document.getElementById('welcome-screen').classList.add('hidden');
             document.getElementById('quiz-screen').classList.remove('hidden');
             showQuestion();
@@ -115,37 +113,29 @@
             container.innerHTML = '';
 
             q.options.forEach(opt => {
-                const btn = document.createElement('button');
-                btn.className = "w-full text-left p-4 border-2 border-slate-100 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition font-semibold text-gray-700 flex justify-between group";
-                btn.innerHTML = `<span>${opt}</span><span class="opacity-0 group-hover:opacity-100 text-indigo-500">→</span>`;
-                btn.onclick = () => {
+                const b = document.createElement('button');
+                b.className = "w-full text-left p-4 border-2 border-slate-100 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition font-semibold text-slate-700";
+                b.innerText = opt;
+                b.onclick = () => {
                     userAnswers[currentIndex] = { selected: opt, correct: q.correct, pts: q.points };
-                    nextQuestion();
+                    nextStep();
                 };
-                container.appendChild(btn);
+                container.appendChild(b);
             });
         }
 
-        function nextQuestion() {
+        function nextStep() {
             currentIndex++;
-            if(currentIndex < questions.length) {
-                showQuestion();
-            } else {
-                endQuiz();
-            }
+            if(currentIndex < questions.length) showQuestion();
+            else endQuiz();
         }
 
         function startTimer() {
             timerInterval = setInterval(() => {
                 timeLeft--;
-                const mins = Math.floor(timeLeft / 60);
-                const secs = timeLeft % 60;
-                document.getElementById('timer').innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-                if(timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    alert("Time is up! Moving to feedback.");
-                    endQuiz();
-                }
+                const m = Math.floor(timeLeft/60), s = timeLeft%60;
+                document.getElementById('timer').innerText = `${m}:${s<10?'0':''}${s}`;
+                if(timeLeft <= 0) endQuiz();
             }, 1000);
         }
 
@@ -156,26 +146,21 @@
         }
 
         async function submitFinal() {
-            let totalScore = 0;
-            Object.values(userAnswers).forEach(ans => {
-                if(ans.selected === ans.correct) totalScore += parseInt(ans.pts);
-            });
-
-            const feedbackData = {
-                difficulty: document.getElementById('f1').value,
-                timeSufficiency: document.querySelector('input[name="f2"]:checked').value,
-                suggestions: document.getElementById('f3').value
-            };
-
+            let score = 0;
+            Object.values(userAnswers).forEach(a => { if(a.selected === a.correct) score += parseInt(a.pts); });
+            
             await db.collection('submissions').add({
                 name: document.getElementById('userName').value,
                 rollNo: document.getElementById('rollNo').value,
-                score: totalScore,
-                feedback: feedbackData,
+                score: score,
+                feedback: { 
+                    d: document.getElementById('f1').value, 
+                    t: document.querySelector('input[name="f2"]:checked').value, 
+                    s: document.getElementById('f3').value 
+                },
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
-
-            alert("Quiz and Feedback submitted successfully! Thank you.");
+            alert("Results Submitted!");
             location.reload();
         }
     </script>
