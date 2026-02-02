@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quiz Admin | Control Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <div id="login-screen" class="flex items-center justify-center min-h-screen">
+        <div class="bg-white p-8 rounded-lg shadow-md text-center">
+            <h1 class="text-2xl font-bold mb-6">Admin Access</h1>
+            <button onclick="login()" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold">Sign in with Google</button>
+        </div>
+    </div>
+
+    <div id="dashboard" class="hidden p-8">
+        <header class="flex justify-between items-center mb-8 bg-white p-6 rounded-xl shadow-sm">
+            <h1 class="text-2xl font-bold text-gray-800">Admin Dashboard</h1>
+            <button onclick="logout()" class="text-red-500 font-medium">Sign Out</button>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <h2 class="text-lg font-bold mb-4">Add New Question</h2>
+                <div class="space-y-4">
+                    <input type="text" id="q-text" placeholder="Question Text" class="w-full p-2 border rounded">
+                    <input type="text" id="q-opts" placeholder="Options (comma separated)" class="w-full p-2 border rounded">
+                    <input type="text" id="q-ans" placeholder="Correct Answer (Must match an option)" class="w-full p-2 border rounded">
+                    <input type="number" id="q-pts" placeholder="Points" class="w-full p-2 border rounded">
+                    <button onclick="addQuestion()" class="w-full bg-green-600 text-white py-2 rounded font-bold">Save Question</button>
+                </div>
+
+                <div id="question-list" class="mt-8 space-y-2">
+                    <h3 class="font-bold border-b pb-2">Existing Questions</h3>
+                    </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold">Leaderboard</h2>
+                    <button onclick="downloadCSV()" class="bg-gray-800 text-white px-4 py-1 rounded text-sm">Download CSV</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b">
+                                <th class="py-2">Roll No</th>
+                                <th class="py-2">Name</th>
+                                <th class="py-2 text-right">Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAnG3Hk8AfZoG0fcI6QMwRLReUNcEFLcz8",
+            authDomain: "cwseunnati.firebaseapp.com",
+            projectId: "cwseunnati",
+            storageBucket: "cwseunnati.firebasestorage.app",
+            messagingSenderId: "557397468479",
+            appId: "1:557397468479:web:55ff3a96b5c2b7f33c1f8a"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const adminEmail = "maddula_m241070ee@nitc.ac.in";
+
+        function login() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).then(res => {
+                if(res.user.email === adminEmail) {
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('dashboard').classList.remove('hidden');
+                    loadQuestions();
+                    loadSubmissions();
+                } else {
+                    alert("Unauthorized!");
+                    auth.signOut();
+                }
+            });
+        }
+
+        async function addQuestion() {
+            const text = document.getElementById('q-text').value;
+            const options = document.getElementById('q-opts').value.split(',').map(s => s.trim());
+            const correct = document.getElementById('q-ans').value.trim();
+            const points = document.getElementById('q-pts').value;
+
+            await db.collection('questions').add({ text, options, correct, points });
+            alert("Added!");
+            loadQuestions();
+        }
+
+        async function loadQuestions() {
+            const qSnap = await db.collection('questions').get();
+            const list = document.getElementById('question-list');
+            list.innerHTML = '<h3 class="font-bold border-b pb-2">Existing Questions</h3>';
+            qSnap.forEach(doc => {
+                const q = doc.data();
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center p-2 bg-gray-50 rounded border";
+                div.innerHTML = `
+                    <span class="text-sm truncate mr-2">${q.text}</span>
+                    <button onclick="deleteQ('${doc.id}')" class="text-red-500 text-xs">Delete</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        async function deleteQ(id) {
+            if(confirm("Delete this question?")) {
+                await db.collection('questions').doc(id).delete();
+                loadQuestions();
+            }
+        }
+
+        async function loadSubmissions() {
+            const subSnap = await db.collection('submissions').orderBy('score', 'desc').get();
+            const tbody = document.getElementById('leaderboard-body');
+            tbody.innerHTML = '';
+            subSnap.forEach(doc => {
+                const s = doc.data();
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="py-2 text-sm font-mono">${s.rollNo}</td>
+                        <td class="py-2 text-sm">${s.name}</td>
+                        <td class="py-2 text-sm text-right font-bold">${s.score}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function downloadCSV() {
+            const subSnap = await db.collection('submissions').get();
+            let csv = "Name,RollNo,Score,Feedback1,Feedback2,Feedback3\n";
+            subSnap.forEach(doc => {
+                const s = doc.data();
+                csv += `${s.name},${s.rollNo},${s.score},"${s.feedback[0]}","${s.feedback[1]}","${s.feedback[2]}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'quiz_responses.csv');
+            a.click();
+        }
+
+        function logout() { auth.signOut(); location.reload(); }
+    </script>
+</body>
+</html>
