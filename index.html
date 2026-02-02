@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Portal | Student</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+
+    <div id="welcome-screen" class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border-t-4 border-blue-600">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">NITC Quiz Portal</h1>
+        <div class="space-y-4">
+            <input type="text" id="userName" placeholder="Full Name" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
+            <input type="text" id="rollNo" placeholder="Roll Number" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none">
+            <button onclick="startQuiz()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">Start Quiz</button>
+        </div>
+    </div>
+
+    <div id="quiz-screen" class="hidden bg-white p-8 rounded-xl shadow-lg w-full max-w-2xl">
+        <div class="flex justify-between items-center mb-6">
+            <span id="q-count" class="text-gray-500 font-medium">Question 1/10</span>
+            <div id="timer" class="text-xl font-mono font-bold text-red-600 bg-red-50 px-4 py-1 rounded-full">10:00</div>
+        </div>
+        
+        <div class="mb-8">
+            <h2 id="q-text" class="text-xl font-semibold text-gray-800 mb-6"></h2>
+            <div id="options-container" class="space-y-3"></div>
+        </div>
+        
+        <div class="flex justify-end">
+            <button id="next-btn" onclick="nextQuestion()" class="bg-gray-800 text-white px-6 py-2 rounded-lg hover:bg-black transition">Next Question</button>
+        </div>
+    </div>
+
+    <div id="feedback-screen" class="hidden bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Final Step: Feedback</h2>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-600">How was the difficulty?</label>
+                <input type="text" id="f1" class="w-full p-2 border rounded-lg">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-600">Was the time sufficient?</label>
+                <input type="text" id="f2" class="w-full p-2 border rounded-lg">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-600">Any other comments?</label>
+                <textarea id="f3" class="w-full p-2 border rounded-lg"></textarea>
+            </div>
+            <button onclick="submitFinal()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg">Submit Final Results</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAnG3Hk8AfZoG0fcI6QMwRLReUNcEFLcz8",
+            authDomain: "cwseunnati.firebaseapp.com",
+            projectId: "cwseunnati",
+            storageBucket: "cwseunnati.firebasestorage.app",
+            messagingSenderId: "557397468479",
+            appId: "1:557397468479:web:55ff3a96b5c2b7f33c1f8a"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let questions = [];
+        let currentIndex = 0;
+        let timeLeft = 600;
+        let timerInterval;
+        let userAnswers = {};
+
+        async function startQuiz() {
+            const name = document.getElementById('userName').value;
+            const roll = document.getElementById('rollNo').value;
+            if(!name || !roll) return alert("Please enter your details.");
+
+            const qSnap = await db.collection('questions').get();
+            questions = qSnap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+            
+            if(questions.length === 0) return alert("No questions available yet.");
+
+            document.getElementById('welcome-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            showQuestion();
+            startTimer();
+        }
+
+        function showQuestion() {
+            const q = questions[currentIndex];
+            document.getElementById('q-count').innerText = `Question ${currentIndex + 1}/${questions.length}`;
+            document.getElementById('q-text').innerText = q.text;
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 border-2 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition font-medium text-gray-700";
+                btn.innerText = opt;
+                btn.onclick = () => {
+                    userAnswers[currentIndex] = { selected: opt, correct: q.correct, pts: q.points };
+                    nextQuestion();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function nextQuestion() {
+            currentIndex++;
+            if(currentIndex < questions.length) showQuestion();
+            else endQuiz();
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                const mins = Math.floor(timeLeft / 60);
+                const secs = timeLeft % 60;
+                document.getElementById('timer').innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                if(timeLeft <= 0) endQuiz();
+            }, 1000);
+        }
+
+        function endQuiz() {
+            clearInterval(timerInterval);
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('feedback-screen').classList.remove('hidden');
+        }
+
+        async function submitFinal() {
+            let score = 0;
+            Object.values(userAnswers).forEach(ans => {
+                if(ans.selected === ans.correct) score += parseInt(ans.pts);
+            });
+
+            await db.collection('submissions').add({
+                name: document.getElementById('userName').value,
+                rollNo: document.getElementById('rollNo').value,
+                score: score,
+                feedback: [document.getElementById('f1').value, document.getElementById('f2').value, document.getElementById('f3').value],
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert("Quiz Submitted Successfully!");
+            location.reload();
+        }
+    </script>
+</body>
+</html>
