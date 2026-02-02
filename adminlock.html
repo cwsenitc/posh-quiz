@@ -2,89 +2,95 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PoSH Admin | NITC Control Center</title>
+    <title>PoSH Admin | Control Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-slate-50 min-h-screen">
 
     <div id="login-screen" class="flex items-center justify-center min-h-screen">
         <div class="bg-white p-12 rounded-3xl shadow-2xl text-center">
-            <h1 class="text-3xl font-black mb-8 text-slate-800 tracking-tight">Admin Portal</h1>
+            <h1 class="text-3xl font-black mb-8 text-slate-800">Admin Login</h1>
             <button onclick="login()" class="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-bold shadow-lg hover:bg-indigo-700 transition">Sign in with Google</button>
         </div>
     </div>
 
     <div id="dashboard" class="hidden p-8 max-w-7xl mx-auto">
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-6 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-6 bg-white p-6 rounded-2xl shadow-sm border">
             <div class="flex items-center gap-6">
                 <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Quiz Status:</span>
-                    <button id="toggle-btn" onclick="toggleQuiz()" class="text-xs font-black px-6 py-2 rounded-full bg-red-500 text-white transition shadow-sm">OFFLINE</button>
+                    <span class="text-xs font-bold text-slate-400">STATUS:</span>
+                    <button id="toggle-btn" onclick="toggleQuiz()" class="text-xs font-black px-6 py-2 rounded-full bg-red-500 text-white transition">OFFLINE</button>
                 </div>
-                <div class="h-8 w-px bg-slate-200"></div>
                 <div class="flex items-center gap-3">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Duration:</span>
-                    <input type="number" id="quiz-duration-input" class="w-16 p-2 text-center border rounded-lg font-bold text-indigo-600 focus:ring-2 focus:ring-indigo-400 outline-none">
-                    <button onclick="updateDuration()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-xs font-bold border border-indigo-100 hover:bg-indigo-100 transition">SET MINS</button>
+                    <span class="text-xs font-bold text-slate-400">TIME (MINS):</span>
+                    <input type="number" id="quiz-duration-input" class="w-16 p-2 text-center border rounded-lg font-bold text-indigo-600">
+                    <button onclick="updateDuration()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-xs font-bold border">SET</button>
                 </div>
             </div>
-            <button onclick="logout()" class="text-red-500 font-bold hover:text-red-700 transition">Logout</button>
+            <button onclick="logout()" class="text-red-500 font-bold">Logout</button>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-2xl border border-slate-100 text-center shadow-sm">
-                <p class="text-xs font-bold text-slate-400 uppercase mb-2">Informative Avg</p>
+            <div class="bg-white p-6 rounded-2xl border text-center">
+                <p class="text-xs font-bold text-slate-400 uppercase">Informative Avg</p>
                 <h3 id="avg-inf" class="text-4xl font-black text-indigo-600">0.0</h3>
             </div>
-            <div class="bg-white p-6 rounded-2xl border border-slate-100 text-center shadow-sm">
-                <p class="text-xs font-bold text-slate-400 uppercase mb-2">Organised Avg</p>
+            <div class="bg-white p-6 rounded-2xl border text-center">
+                <p class="text-xs font-bold text-slate-400 uppercase">Organised Avg</p>
                 <h3 id="avg-org" class="text-4xl font-black text-emerald-600">0.0</h3>
             </div>
-            <div class="bg-white p-6 rounded-2xl border border-slate-100 text-center shadow-sm">
-                <p class="text-xs font-bold text-slate-400 uppercase mb-2">Overall Program Rating</p>
+            <div class="bg-white p-6 rounded-2xl border text-center">
+                <p class="text-xs font-bold text-slate-400 uppercase">Overall Avg</p>
                 <h3 id="avg-rate" class="text-4xl font-black text-amber-500">0.0</h3>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-fit">
-                <h2 id="form-title" class="font-bold text-lg mb-6 text-slate-800">Add New Question</h2>
-                <div class="space-y-4">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border h-fit">
+                <h2 id="form-title" class="font-bold text-lg mb-6">Manage Question</h2>
+                <div class="space-y-3">
                     <input type="hidden" id="edit-id">
-                    <textarea id="q-text" placeholder="Question Text" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 min-h-[100px]"></textarea>
-                    <input type="text" id="q-opts" placeholder="Option A, Option B, Option C, Option D" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-                    <input type="text" id="q-ans" placeholder="Correct Answer (Exact Match)" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-                    <input type="number" id="q-pts" placeholder="Points (default 1)" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                    <textarea id="q-text" placeholder="Question Text" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="opt-a" placeholder="Option A" class="p-3 border rounded-xl outline-none text-sm">
+                        <input type="text" id="opt-b" placeholder="Option B" class="p-3 border rounded-xl outline-none text-sm">
+                        <input type="text" id="opt-c" placeholder="Option C" class="p-3 border rounded-xl outline-none text-sm">
+                        <input type="text" id="opt-d" placeholder="Option D" class="p-3 border rounded-xl outline-none text-sm">
+                    </div>
+
+                    <select id="q-ans" class="w-full p-3 border rounded-xl outline-none text-sm font-semibold text-indigo-600">
+                        <option value="">Select Correct Option</option>
+                        <option value="A">Option A</option>
+                        <option value="B">Option B</option>
+                        <option value="C">Option C</option>
+                        <option value="D">Option D</option>
+                    </select>
+
+                    <input type="number" id="q-pts" value="2" placeholder="Points" class="w-full p-3 border rounded-xl outline-none">
                     
                     <div class="flex gap-2">
-                        <button id="submit-btn" onclick="saveQuestion()" class="flex-1 bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-md hover:bg-indigo-700 transition">Save Question</button>
-                        <button id="cancel-edit" onclick="resetForm()" class="hidden bg-slate-100 text-slate-600 px-4 py-4 rounded-xl font-bold border hover:bg-slate-200 transition">Cancel</button>
+                        <button id="submit-btn" onclick="saveQuestion()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-md">Save</button>
+                        <button id="cancel-edit" onclick="resetForm()" class="hidden bg-slate-100 text-slate-600 px-4 rounded-xl border">X</button>
                     </div>
                 </div>
-                <div id="q-list" class="mt-8 space-y-3 overflow-y-auto max-h-[400px]"></div>
+                <div id="q-list" class="mt-8 space-y-2 overflow-y-auto max-h-[300px]"></div>
             </div>
 
-            <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <div class="flex justify-between items-center mb-8">
-                    <h2 class="font-bold text-lg text-slate-800">Student Responses</h2>
-                    <button onclick="downloadCSV()" class="bg-slate-800 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-lg hover:bg-black transition">Export CSV</button>
+            <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border overflow-x-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-bold text-lg">Submissions</h2>
+                    <button onclick="downloadCSV()" class="bg-slate-800 text-white px-5 py-2 rounded-xl text-sm font-bold">Export CSV</button>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead class="bg-slate-50 border-b">
-                            <tr class="text-slate-400 text-[10px] uppercase font-bold tracking-widest">
-                                <th class="p-4">Roll Number</th>
-                                <th class="p-4">Full Name</th>
-                                <th class="p-4">Score</th>
-                                <th class="p-4">Manage</th>
-                            </tr>
-                        </thead>
-                        <tbody id="leaderboard-body" class="divide-y divide-slate-100"></tbody>
-                    </table>
-                </div>
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 border-b text-[10px] uppercase font-bold text-slate-400">
+                        <tr><th class="p-4">Roll No</th><th class="p-4">Name</th><th class="p-4">Score</th><th class="p-4">Manage</th></tr>
+                    </thead>
+                    <tbody id="leaderboard-body" class="text-sm"></tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -110,72 +116,59 @@
                     document.getElementById('login-screen').classList.add('hidden');
                     document.getElementById('dashboard').classList.remove('hidden');
                     setupLiveListeners();
-                } else { alert("Unauthorized access. Admin only."); auth.signOut(); }
-            }).catch(err => alert("Login Error: " + err.message));
-        }
-
-        async function toggleQuiz() {
-            const btn = document.getElementById('toggle-btn');
-            const newStatus = btn.innerText === "OFFLINE";
-            await db.collection('settings').doc('quizStatus').update({ active: newStatus });
-        }
-
-        async function updateDuration() {
-            const mins = document.getElementById('quiz-duration-input').value;
-            if(!mins) return alert("Please enter duration in minutes.");
-            await db.collection('settings').doc('quizStatus').update({ duration: parseInt(mins) });
-            alert("Quiz duration set to " + mins + " minutes.");
+                } else { alert("Unauthorized!"); auth.signOut(); }
+            });
         }
 
         async function saveQuestion() {
             const id = document.getElementById('edit-id').value;
             const text = document.getElementById('q-text').value;
-            const optInput = document.getElementById('q-opts').value;
-            const ans = document.getElementById('q-ans').value.trim();
+            const opts = [
+                document.getElementById('opt-a').value,
+                document.getElementById('opt-b').value,
+                document.getElementById('opt-c').value,
+                document.getElementById('opt-d').value
+            ];
+            const ansKey = document.getElementById('q-ans').value;
+            const correct = opts[ansKey === 'A' ? 0 : ansKey === 'B' ? 1 : ansKey === 'C' ? 2 : 3];
             const pts = document.getElementById('q-pts').value;
 
-            if(!text || !optInput || !ans) return alert("Please fill the Question, Options, and Answer.");
-            const options = optInput.split(',').map(o => o.trim());
+            if(!text || !opts[0] || !ansKey) return alert("Missing data!");
 
-            const data = { text, options, correct: ans, points: parseInt(pts) || 1 };
-
-            if(id) {
-                await db.collection('questions').doc(id).update(data);
-                alert("Question Updated!");
-            } else {
-                await db.collection('questions').add(data);
-                alert("Question Added!");
-            }
+            const data = { text, options: opts, correct, points: parseInt(pts) || 2 };
+            if(id) await db.collection('questions').doc(id).update(data);
+            else await db.collection('questions').add(data);
             resetForm();
         }
 
         function editQuestion(id, data) {
-            document.getElementById('form-title').innerText = "Edit Question";
             document.getElementById('edit-id').value = id;
             document.getElementById('q-text').value = data.text;
-            document.getElementById('q-opts').value = data.options.join(', ');
-            document.getElementById('q-ans').value = data.correct;
+            document.getElementById('opt-a').value = data.options[0];
+            document.getElementById('opt-b').value = data.options[1];
+            document.getElementById('opt-c').value = data.options[2];
+            document.getElementById('opt-d').value = data.options[3];
+            document.getElementById('q-ans').value = data.correct === data.options[0] ? 'A' : data.correct === data.options[1] ? 'B' : data.correct === data.options[2] ? 'C' : 'D';
             document.getElementById('q-pts').value = data.points;
-            document.getElementById('submit-btn').innerText = "Update Question";
             document.getElementById('cancel-edit').classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.getElementById('submit-btn').innerText = "Update";
         }
 
         function resetForm() {
-            document.getElementById('form-title').innerText = "Add New Question";
             document.getElementById('edit-id').value = "";
             document.getElementById('q-text').value = "";
-            document.getElementById('q-opts').value = "";
+            document.getElementById('opt-a').value = "";
+            document.getElementById('opt-b').value = "";
+            document.getElementById('opt-c').value = "";
+            document.getElementById('opt-d').value = "";
             document.getElementById('q-ans').value = "";
-            document.getElementById('q-pts').value = "";
-            document.getElementById('submit-btn').innerText = "Save Question";
+            document.getElementById('q-pts').value = "2";
             document.getElementById('cancel-edit').classList.add('hidden');
+            document.getElementById('submit-btn').innerText = "Save";
         }
 
         function setupLiveListeners() {
-            // Status/Time Listener
             db.collection('settings').doc('quizStatus').onSnapshot(doc => {
-                if(!doc.exists) return;
                 const d = doc.data();
                 const btn = document.getElementById('toggle-btn');
                 btn.innerText = d.active ? "ACTIVE" : "OFFLINE";
@@ -183,29 +176,15 @@
                 document.getElementById('quiz-duration-input').value = d.duration || 10;
             });
 
-            // Summary Ratings & Leaderboard
             db.collection('submissions').onSnapshot(snap => {
                 let tInf = 0, tOrg = 0, tRate = 0, count = 0;
                 const body = document.getElementById('leaderboard-body');
                 body.innerHTML = '';
-
                 snap.forEach(doc => {
                     const s = doc.data();
-                    if(s.feedback) {
-                        tInf += parseInt(s.feedback.inf || 0);
-                        tOrg += parseInt(s.feedback.org || 0);
-                        tRate += parseInt(s.feedback.rate || 0);
-                        count++;
-                    }
-                    body.innerHTML += `
-                    <tr class="hover:bg-slate-50 transition">
-                        <td class="p-4 font-mono text-xs text-slate-500">${s.rollNo}</td>
-                        <td class="p-4 font-bold text-slate-700">${s.name}</td>
-                        <td class="p-4 text-indigo-600 font-black">${s.score}</td>
-                        <td class="p-4"><button onclick="deleteEntry('${doc.id}')" class="text-red-400 text-[10px] font-black tracking-tighter hover:text-red-600 transition">CLEAR</button></td>
-                    </tr>`;
+                    if(s.feedback) { tInf += parseInt(s.feedback.inf); tOrg += parseInt(s.feedback.org); tRate += parseInt(s.feedback.rate); count++; }
+                    body.innerHTML += `<tr class="border-b"><td class="p-4 font-mono">${s.rollNo}</td><td class="p-4 font-bold">${s.name}</td><td class="p-4 text-indigo-600 font-black">${s.score}</td><td class="p-4"><button onclick="deleteEntry('${doc.id}')" class="text-red-400 text-xs">Clear</button></td></tr>`;
                 });
-
                 if(count > 0) {
                     document.getElementById('avg-inf').innerText = (tInf/count).toFixed(1);
                     document.getElementById('avg-org').innerText = (tOrg/count).toFixed(1);
@@ -213,40 +192,42 @@
                 }
             });
 
-            // Question List
             db.collection('questions').onSnapshot(snap => {
                 const list = document.getElementById('q-list');
-                list.innerHTML = '<h3 class="text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-widest">Added Questions</h3>';
+                list.innerHTML = '';
                 snap.forEach(doc => {
-                    const qData = doc.data();
+                    const q = doc.data();
                     const div = document.createElement('div');
-                    div.className = "p-4 bg-slate-50 border rounded-xl flex justify-between items-center text-xs font-medium text-slate-600 shadow-sm";
-                    div.innerHTML = `
-                        <span class="truncate w-32 font-bold">${qData.text}</span>
-                        <div class="flex gap-2">
-                            <button onclick='editQuestion("${doc.id}", ${JSON.stringify(qData)})' class="text-indigo-600 font-black">EDIT</button>
-                            <button onclick='deleteQ("${doc.id}")' class="text-red-500 font-black">X</button>
-                        </div>`;
+                    div.className = "p-3 bg-slate-50 border rounded-xl flex justify-between items-center text-xs";
+                    div.innerHTML = `<span class="truncate w-32 font-bold">${q.text}</span><div class="flex gap-2"><button onclick='editQuestion("${doc.id}", ${JSON.stringify(q)})' class="text-indigo-600 font-bold">Edit</button><button onclick='deleteQ("${doc.id}")' class="text-red-500 font-bold">X</button></div>`;
                     list.appendChild(div);
                 });
             });
         }
 
-        async function deleteQ(id) { if(confirm("Permanently delete this question?")) await db.collection('questions').doc(id).delete(); }
-        async function deleteEntry(id) { if(confirm("Clear this submission?")) await db.collection('submissions').doc(id).delete(); }
+        async function toggleQuiz() {
+            const btn = document.getElementById('toggle-btn');
+            await db.collection('settings').doc('quizStatus').update({ active: btn.innerText === "OFFLINE" });
+        }
+
+        async function updateDuration() {
+            const mins = document.getElementById('quiz-duration-input').value;
+            await db.collection('settings').doc('quizStatus').update({ duration: parseInt(mins) });
+        }
+
+        async function deleteQ(id) { if(confirm("Delete?")) await db.collection('questions').doc(id).delete(); }
+        async function deleteEntry(id) { if(confirm("Clear?")) await db.collection('submissions').doc(id).delete(); }
 
         async function downloadCSV() {
             const snap = await db.collection('submissions').get();
-            let csv = "Name,RollNo,QuizScore,InformativeRating,OrganisedRating,OverallRating,Timestamp\n";
+            let csv = "Name,RollNo,Score,InfRating,OrgRating,OverallRating\n";
             snap.forEach(doc => {
                 const s = doc.data();
-                const ts = s.timestamp ? s.timestamp.toDate().toLocaleString() : "N/A";
-                csv += `"${s.name}","${s.rollNo}",${s.score},${s.feedback.inf},${s.feedback.org},${s.feedback.rate},"${ts}"\n`;
+                csv += `"${s.name}","${s.rollNo}",${s.score},${s.feedback.inf},${s.feedback.org},${s.feedback.rate}\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = 'posh_program_responses.csv'; a.click();
+            const a = document.createElement('a'); a.href = url; a.download = 'results.csv'; a.click();
         }
 
         function logout() { auth.signOut(); location.reload(); }
