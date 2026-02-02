@@ -21,9 +21,17 @@
         <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
             <div class="flex items-center gap-6">
                 <h1 class="text-3xl font-black text-slate-800">Control Panel</h1>
-                <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border">
-                    <span class="text-xs font-bold text-slate-400">STATUS:</span>
-                    <button id="toggle-btn" onclick="toggleQuiz()" class="text-xs font-black px-4 py-1 rounded-full bg-red-500 text-white transition">OFFLINE</button>
+                <div class="flex items-center gap-4 bg-white px-4 py-2 rounded-xl shadow-sm border">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-400 uppercase">Status:</span>
+                        <button id="toggle-btn" onclick="toggleQuiz()" class="text-xs font-black px-4 py-1 rounded-full bg-red-500 text-white transition">OFFLINE</button>
+                    </div>
+                    <div class="h-6 w-px bg-slate-200"></div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-400 uppercase">Duration:</span>
+                        <input type="number" id="quiz-duration-input" placeholder="Mins" class="w-16 p-1 text-xs border rounded text-center font-bold">
+                        <button onclick="updateDuration()" class="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-2 py-1 rounded font-bold uppercase">Set</button>
+                    </div>
                 </div>
             </div>
             <button onclick="logout()" class="text-red-500 font-bold">Sign Out</button>
@@ -34,8 +42,8 @@
                 <h2 class="font-bold text-lg mb-4">Add Question</h2>
                 <div class="space-y-4">
                     <input type="text" id="q-text" placeholder="Question text" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-                    <input type="text" id="q-opts" placeholder="Option A, Option B, Option C (Comma separated)" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-                    <input type="text" id="q-ans" placeholder="Correct Answer (exactly as in options)" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="text" id="q-opts" placeholder="Option A, Option B, Option C" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="text" id="q-ans" placeholder="Correct Answer" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
                     <input type="number" id="q-pts" placeholder="Points" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
                     <button onclick="addQuestion()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700">Add to Quiz</button>
                 </div>
@@ -87,7 +95,14 @@
         async function toggleQuiz() {
             const btn = document.getElementById('toggle-btn');
             const newStatus = btn.innerText === "OFFLINE";
-            await db.collection('settings').doc('quizStatus').set({ active: newStatus });
+            await db.collection('settings').doc('quizStatus').update({ active: newStatus });
+        }
+
+        async function updateDuration() {
+            const mins = document.getElementById('quiz-duration-input').value;
+            if(!mins) return alert("Enter minutes");
+            await db.collection('settings').doc('quizStatus').update({ duration: parseInt(mins) });
+            alert("Time set to " + mins + " minutes");
         }
 
         async function addQuestion() {
@@ -95,52 +110,36 @@
             const optInput = document.getElementById('q-opts').value;
             const ans = document.getElementById('q-ans').value.trim();
             const pts = document.getElementById('q-pts').value;
-
             if(!text || !optInput || !ans) return alert("Fill all fields");
-
             const options = optInput.split(',').map(o => o.trim());
             await db.collection('questions').add({ text, options, correct: ans, points: parseInt(pts)||1 });
-            
-            // Reset
-            document.getElementById('q-text').value = '';
-            document.getElementById('q-opts').value = '';
-            document.getElementById('q-ans').value = '';
+            document.getElementById('q-text').value = ''; document.getElementById('q-opts').value = ''; document.getElementById('q-ans').value = '';
         }
 
         function setupLiveListeners() {
-            // Status Watcher
             db.collection('settings').doc('quizStatus').onSnapshot(doc => {
+                if(!doc.exists) return;
+                const d = doc.data();
                 const btn = document.getElementById('toggle-btn');
-                const active = doc.exists && doc.data().active;
-                btn.innerText = active ? "ACTIVE" : "OFFLINE";
-                btn.className = active ? "text-xs font-black px-4 py-1 rounded-full bg-emerald-500 text-white shadow-lg" : "text-xs font-black px-4 py-1 rounded-full bg-red-500 text-white";
+                btn.innerText = d.active ? "ACTIVE" : "OFFLINE";
+                btn.className = d.active ? "text-xs font-black px-4 py-1 rounded-full bg-emerald-500 text-white shadow-lg" : "text-xs font-black px-4 py-1 rounded-full bg-red-500 text-white";
+                document.getElementById('quiz-duration-input').value = d.duration || 10;
             });
 
-            // Questions Watcher
             db.collection('questions').onSnapshot(snap => {
                 const list = document.getElementById('q-list');
                 list.innerHTML = '<h3 class="text-xs font-bold text-slate-400 mb-2 uppercase">Quiz Content</h3>';
                 snap.forEach(doc => {
-                    const q = doc.data();
-                    list.innerHTML += `<div class="p-3 bg-gray-50 rounded-xl border flex justify-between items-center text-sm">
-                        <span class="truncate w-32">${q.text}</span>
-                        <button onclick="deleteQ('${doc.id}')" class="text-red-500 font-bold">Delete</button>
-                    </div>`;
+                    list.innerHTML += `<div class="p-3 bg-gray-50 rounded-xl border flex justify-between items-center text-sm"><span class="truncate w-32">${doc.data().text}</span><button onclick="deleteQ('${doc.id}')" class="text-red-500 font-bold">Delete</button></div>`;
                 });
             });
 
-            // Results Watcher
             db.collection('submissions').orderBy('score', 'desc').onSnapshot(snap => {
                 const body = document.getElementById('leaderboard-body');
                 body.innerHTML = '';
                 snap.forEach(doc => {
                     const s = doc.data();
-                    body.innerHTML += `<tr class="border-b hover:bg-slate-50">
-                        <td class="p-3 text-sm font-mono">${s.rollNo}</td>
-                        <td class="p-3 text-sm font-bold text-slate-700">${s.name}</td>
-                        <td class="p-3 text-indigo-600 font-black">${s.score}</td>
-                        <td class="p-3"><button onclick="deleteSub('${doc.id}')" class="text-xs text-red-400">Clear</button></td>
-                    </tr>`;
+                    body.innerHTML += `<tr class="border-b hover:bg-slate-50"><td class="p-3 text-sm font-mono">${s.rollNo}</td><td class="p-3 text-sm font-bold text-slate-700">${s.name}</td><td class="p-3 text-indigo-600 font-black">${s.score}</td><td class="p-3"><button onclick="deleteSub('${doc.id}')" class="text-xs text-red-400">Clear</button></td></tr>`;
                 });
             });
         }
