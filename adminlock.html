@@ -94,7 +94,9 @@
                         <tr>
                             <th class="p-4">Roll No</th>
                             <th class="p-4">Name</th>
-                            <th class="p-4">Score</th>
+                            <th class="p-4 cursor-pointer hover:text-indigo-600 flex items-center gap-1" onclick="toggleSort()">
+                                Score <span id="sort-icon">▼</span>
+                            </th>
                             <th class="p-4">Submitted At</th>
                             <th class="p-4">Manage</th>
                         </tr>
@@ -120,6 +122,7 @@
         const adminEmail = "maddula_m241070ee@nitc.ac.in";
         
         let currentSortOrder = 'desc';
+        let submissionUnsubscribe = null; // To handle live listener updates when sorting changes
 
         function login() {
             const provider = new firebase.auth.GoogleAuthProvider();
@@ -130,6 +133,13 @@
                     setupLiveListeners();
                 } else { alert("Unauthorized!"); auth.signOut(); }
             });
+        }
+
+        // Feature: Toggle Sort Order
+        function toggleSort() {
+            currentSortOrder = (currentSortOrder === 'desc') ? 'asc' : 'desc';
+            document.getElementById('sort-icon').innerText = (currentSortOrder === 'desc') ? '▼' : '▲';
+            setupLiveListeners(); // Refresh listener with new sort order
         }
 
         async function saveQuestion() {
@@ -190,8 +200,9 @@
                 document.getElementById('quiz-duration-input').value = d.duration || 10;
             });
 
-            // Submissions listener with Timestamp display
-            db.collection('submissions').orderBy('score', 'desc').onSnapshot(snap => {
+            // Submissions listener with Dynamic Sort
+            if(submissionUnsubscribe) submissionUnsubscribe(); // Detach old listener
+            submissionUnsubscribe = db.collection('submissions').orderBy('score', currentSortOrder).onSnapshot(snap => {
                 let tInf = 0, tOrg = 0, tRate = 0, count = 0;
                 const body = document.getElementById('leaderboard-body');
                 body.innerHTML = '';
@@ -199,7 +210,6 @@
                     const s = doc.data();
                     if(s.feedback) { tInf += parseInt(s.feedback.inf); tOrg += parseInt(s.feedback.org); tRate += parseInt(s.feedback.rate); count++; }
                     
-                    // Format timestamp
                     const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...';
 
                     body.innerHTML += `
@@ -247,7 +257,7 @@
         async function deleteEntry(id) { if(confirm("Clear?")) await db.collection('submissions').doc(id).delete(); }
 
         async function downloadCSV() {
-            const snap = await db.collection('submissions').orderBy('score', 'desc').get();
+            const snap = await db.collection('submissions').orderBy('score', currentSortOrder).get();
             let csv = "Name,RollNo,Email,Score,SubmittedAt,InfRating,OrgRating,OverallRating\n";
             snap.forEach(doc => {
                 const s = doc.data();
