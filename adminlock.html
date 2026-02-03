@@ -30,6 +30,10 @@
                     <button onclick="updateDuration()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-xs font-bold border">SET</button>
                 </div>
             </div>
+            <div class="flex items-center gap-2 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100">
+                <span class="text-xs font-bold text-indigo-400 uppercase">Live Questions:</span>
+                <span id="live-q-count" class="text-lg font-black text-indigo-600">0</span>
+            </div>
             <button onclick="logout()" class="text-red-500 font-bold">Logout</button>
         </div>
 
@@ -212,7 +216,12 @@
 
             db.collection('questions').onSnapshot(snap => {
                 const list = document.getElementById('q-list');
+                const liveCount = document.getElementById('live-q-count');
                 list.innerHTML = '';
+                
+                // Update live question count
+                liveCount.innerText = snap.size;
+
                 snap.forEach(doc => {
                     const q = doc.data();
                     const div = document.createElement('div');
@@ -241,7 +250,7 @@
             let csv = "Name,RollNo,Email,Score,InfRating,OrgRating,OverallRating\n";
             snap.forEach(doc => {
                 const s = doc.data();
-                csv += `"${s.name}","${s.rollNo}","${s.email || 'N/A'}",${s.score},${s.feedback.inf},${s.feedback.org},${s.feedback.rate}\n`;
+                csv += `"${s.name}","${s.rollNo}","${s.email || 'N/A'}",${s.score},${s.feedback ? s.feedback.inf : 0},${s.feedback ? s.feedback.org : 0},${s.feedback ? s.feedback.rate : 0}\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
