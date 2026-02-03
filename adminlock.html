@@ -94,11 +94,8 @@
                         <tr>
                             <th class="p-4">Roll No</th>
                             <th class="p-4">Name</th>
-                            <th class="p-4">Email ID</th>
-                            <th class="p-4 cursor-pointer hover:text-indigo-600 flex items-center gap-1" onclick="toggleSort()">
-                                Score 
-                                <span id="sort-icon">▼</span>
-                            </th>
+                            <th class="p-4">Score</th>
+                            <th class="p-4">Submitted At</th>
                             <th class="p-4">Manage</th>
                         </tr>
                     </thead>
@@ -182,13 +179,8 @@
             document.getElementById('submit-btn').innerText = "Save";
         }
 
-        function toggleSort() {
-            currentSortOrder = currentSortOrder === 'desc' ? 'asc' : 'desc';
-            document.getElementById('sort-icon').innerText = currentSortOrder === 'desc' ? '▼' : '▲';
-            setupLiveListeners(); 
-        }
-
         function setupLiveListeners() {
+            // Settings listener
             db.collection('settings').doc('quizStatus').onSnapshot(doc => {
                 if(!doc.exists) return;
                 const d = doc.data();
@@ -198,14 +190,26 @@
                 document.getElementById('quiz-duration-input').value = d.duration || 10;
             });
 
-            db.collection('submissions').orderBy('score', currentSortOrder).onSnapshot(snap => {
+            // Submissions listener with Timestamp display
+            db.collection('submissions').orderBy('score', 'desc').onSnapshot(snap => {
                 let tInf = 0, tOrg = 0, tRate = 0, count = 0;
                 const body = document.getElementById('leaderboard-body');
                 body.innerHTML = '';
                 snap.forEach(doc => {
                     const s = doc.data();
                     if(s.feedback) { tInf += parseInt(s.feedback.inf); tOrg += parseInt(s.feedback.org); tRate += parseInt(s.feedback.rate); count++; }
-                    body.innerHTML += `<tr class="border-b"><td class="p-4 font-mono">${s.rollNo}</td><td class="p-4 font-bold">${s.name}</td><td class="p-4">${s.email || 'N/A'}</td><td class="p-4 text-indigo-600 font-black">${s.score}</td><td class="p-4"><button onclick="deleteEntry('${doc.id}')" class="text-red-400 text-xs">Clear</button></td></tr>`;
+                    
+                    // Format timestamp
+                    const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...';
+
+                    body.innerHTML += `
+                        <tr class="border-b">
+                            <td class="p-4 font-mono">${s.rollNo}</td>
+                            <td class="p-4 font-bold">${s.name}</td>
+                            <td class="p-4 text-indigo-600 font-black">${s.score}</td>
+                            <td class="p-4 text-slate-500">${timeStr}</td>
+                            <td class="p-4"><button onclick="deleteEntry('${doc.id}')" class="text-red-400 text-xs">Clear</button></td>
+                        </tr>`;
                 });
                 if(count > 0) {
                     document.getElementById('avg-inf').innerText = (tInf/count).toFixed(1);
@@ -214,14 +218,11 @@
                 }
             });
 
+            // Questions listener
             db.collection('questions').onSnapshot(snap => {
                 const list = document.getElementById('q-list');
-                const liveCount = document.getElementById('live-q-count');
+                document.getElementById('live-q-count').innerText = snap.size;
                 list.innerHTML = '';
-                
-                // Update live question count
-                liveCount.innerText = snap.size;
-
                 snap.forEach(doc => {
                     const q = doc.data();
                     const div = document.createElement('div');
@@ -246,11 +247,12 @@
         async function deleteEntry(id) { if(confirm("Clear?")) await db.collection('submissions').doc(id).delete(); }
 
         async function downloadCSV() {
-            const snap = await db.collection('submissions').orderBy('score', currentSortOrder).get();
-            let csv = "Name,RollNo,Email,Score,InfRating,OrgRating,OverallRating\n";
+            const snap = await db.collection('submissions').orderBy('score', 'desc').get();
+            let csv = "Name,RollNo,Email,Score,SubmittedAt,InfRating,OrgRating,OverallRating\n";
             snap.forEach(doc => {
                 const s = doc.data();
-                csv += `"${s.name}","${s.rollNo}","${s.email || 'N/A'}",${s.score},${s.feedback ? s.feedback.inf : 0},${s.feedback ? s.feedback.org : 0},${s.feedback ? s.feedback.rate : 0}\n`;
+                const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleString().replace(',', '') : 'N/A';
+                csv += `"${s.name}","${s.rollNo}","${s.email || 'N/A'}",${s.score},"${timeStr}",${s.feedback.inf},${s.feedback.org},${s.feedback.rate}\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
