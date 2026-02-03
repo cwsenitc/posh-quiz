@@ -85,7 +85,18 @@
                 </div>
             </div>
 
-            <button onclick="submitFinal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg transition">Submit Quiz & Feedback</button>
+            <button onclick="submitFinal()" id="final-submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg transition">Submit Quiz & Feedback</button>
+        </div>
+    </div>
+
+    <div id="thank-you-screen" class="hidden bg-white p-12 rounded-2xl shadow-xl w-full max-w-md text-center border-t-8 border-emerald-500">
+        <div class="mb-6 text-emerald-500">
+            <svg class="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <h2 class="text-3xl font-black text-slate-800 mb-4">Success!</h2>
+        <p class="text-slate-600 mb-8">Your attendance and quiz responses have been recorded successfully.</p>
+        <div class="p-4 bg-slate-50 rounded-xl border text-sm text-slate-500 italic">
+            You may now close this window.
         </div>
     </div>
 
@@ -103,9 +114,15 @@
 
         let questions = [], currentIndex = 0, timeLeft = 0, timerInterval, userAnswers = {};
         let isQuizActiveInUI = false; 
-        let preFetchedData = []; // To store questions immediately
+        let preFetchedData = [];
 
-        // 1. PREFETCH SYSTEM: Fetch questions immediately on load
+        // ON LOAD CHECK: Ensure user hasn't already submitted
+        window.onload = function() {
+            if (localStorage.getItem("posh_quiz_submitted") === "true") {
+                showThankYou();
+            }
+        };
+
         async function preFetchQuestions() {
             try {
                 const qSnap = await db.collection('questions').get();
@@ -114,9 +131,8 @@
         }
         preFetchQuestions();
 
-        // 2. LIVE ADMIN LISTENER
         db.collection('settings').doc('quizStatus').onSnapshot(doc => {
-            if(!doc.exists) return;
+            if(!doc.exists || localStorage.getItem("posh_quiz_submitted") === "true") return;
             const d = doc.data();
             const btn = document.getElementById('start-btn'), msg = document.getElementById('wait-msg');
             
@@ -128,11 +144,8 @@
             } else {
                 btn.classList.add('hidden'); 
                 msg.classList.remove('hidden');
-                
-                // FEATURE: Auto-end and move to feedback if Admin turns OFF
                 if(isQuizActiveInUI) {
                     isQuizActiveInUI = false;
-                    alert("The Quiz session has been closed by the Admin. Please provide your feedback to submit your results.");
                     endQuiz();
                 }
             }
@@ -144,7 +157,6 @@
                   email = document.getElementById('userEmail').value;
             if(!name || !roll || !email) return alert("Please enter your name, roll number, and email.");
 
-            // Use pre-fetched data for zero delay
             if(preFetchedData.length === 0) {
                 const qSnap = await db.collection('questions').get();
                 questions = qSnap.docs.map(doc => ({id: doc.id, ...doc.data()}));
@@ -154,7 +166,6 @@
             
             if(questions.length === 0) return alert("Quiz content is not ready yet.");
 
-            // Shuffle
             for (let i = questions.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [questions[i], questions[j]] = [questions[j], questions[i]];
@@ -200,11 +211,9 @@
                 timeLeft--;
                 const m = Math.floor(timeLeft/60), s = timeLeft%60;
                 document.getElementById('timer').innerText = `${m}:${s<10?'0':''}${s}`;
-                
                 if(timeLeft <= 0) {
                     isQuizActiveInUI = false;
                     clearInterval(timerInterval);
-                    alert("Time is up! Redirecting to feedback for submission.");
                     endQuiz();
                 }
             }, 1000);
@@ -216,7 +225,18 @@
             document.getElementById('feedback-screen').classList.remove('hidden');
         }
 
+        function showThankYou() {
+            document.getElementById('welcome-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('feedback-screen').classList.add('hidden');
+            document.getElementById('thank-you-screen').classList.remove('hidden');
+        }
+
         async function submitFinal() {
+            const btn = document.getElementById('final-submit-btn');
+            btn.disabled = true;
+            btn.innerText = "Recording Response...";
+
             let score = 0;
             Object.values(userAnswers).forEach(a => { 
                 if(a.selected === a.correct) score += parseInt(a.pts); 
@@ -237,11 +257,15 @@
                     feedback: feedback,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                alert("PoSH Program Quiz submitted successfully!");
-                location.reload();
+                
+                // Set Local Storage flag
+                localStorage.setItem("posh_quiz_submitted", "true");
+                showThankYou();
             } catch (error) {
                 console.error("Submission Error: ", error);
                 alert("Error submitting. Please try again.");
+                btn.disabled = false;
+                btn.innerText = "Submit Quiz & Feedback";
             }
         }
     </script>
