@@ -103,11 +103,13 @@
         const db = firebase.firestore();
 
         let questions = [], currentIndex = 0, timeLeft = 0, timerInterval, userAnswers = {};
+        let isQuizActiveInUI = false; // Flag to track if user is currently taking the quiz
 
         db.collection('settings').doc('quizStatus').onSnapshot(doc => {
             if(!doc.exists) return;
             const d = doc.data();
             const btn = document.getElementById('start-btn'), msg = document.getElementById('wait-msg');
+            
             if(d.active) {
                 btn.classList.remove('hidden'); 
                 msg.classList.add('hidden');
@@ -116,6 +118,13 @@
             } else {
                 btn.classList.add('hidden'); 
                 msg.classList.remove('hidden');
+                
+                // FEATURE: Auto-end quiz if Admin switches to OFFLINE while user is playing
+                if(isQuizActiveInUI) {
+                    isQuizActiveInUI = false;
+                    alert("The Admin has ended the quiz session. Please provide your feedback to submit.");
+                    endQuiz();
+                }
             }
         });
 
@@ -135,6 +144,7 @@
                 [rawQuestions[i], rawQuestions[j]] = [rawQuestions[j], rawQuestions[i]];
             }
             questions = rawQuestions;
+            isQuizActiveInUI = true;
 
             document.getElementById('welcome-screen').classList.add('hidden');
             document.getElementById('quiz-screen').classList.remove('hidden');
@@ -164,7 +174,10 @@
         function nextStep() { 
             currentIndex++; 
             if(currentIndex < questions.length) showQuestion(); 
-            else endQuiz(); 
+            else {
+                isQuizActiveInUI = false;
+                endQuiz(); 
+            }
         }
 
         function startTimer() {
@@ -174,8 +187,9 @@
                 document.getElementById('timer').innerText = `${m}:${s<10?'0':''}${s}`;
                 
                 if(timeLeft <= 0) {
+                    isQuizActiveInUI = false;
                     clearInterval(timerInterval);
-                    alert("Time is up! Your responses are being recorded.");
+                    alert("Time is up! Please provide feedback to submit.");
                     endQuiz();
                 }
             }, 1000);
@@ -200,14 +214,13 @@
             };
 
             try {
-                // RECORDING TIMESTAMP HERE
                 await db.collection('submissions').add({
                     name: document.getElementById('userName').value,
                     rollNo: document.getElementById('rollNo').value,
                     email: document.getElementById('userEmail').value,
                     score: score,
                     feedback: feedback,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp() // Recorded in DB
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 alert("PoSH Program Quiz submitted successfully!");
                 location.reload();
