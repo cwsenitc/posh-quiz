@@ -200,13 +200,14 @@
             };
 
             try {
+                // RECORDING TIMESTAMP HERE
                 await db.collection('submissions').add({
                     name: document.getElementById('userName').value,
                     rollNo: document.getElementById('rollNo').value,
                     email: document.getElementById('userEmail').value,
                     score: score,
                     feedback: feedback,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp() // Recorded in DB
                 });
                 alert("PoSH Program Quiz submitted successfully!");
                 location.reload();
