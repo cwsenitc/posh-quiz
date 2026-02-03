@@ -19,11 +19,12 @@
         <div class="text-center mb-8">
             <h1 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Attendance & Quiz on PoSH Awareness</h1>
             <p class="text-slate-500 text-sm">By CWSE & ICC, NITC</p>
-            <p class="text-slate-300 text-sm">03-05, February, 2026</p>
+            <p class="text-slate-300 text-sm italic">03-05, February, 2026</p>
         </div>
         <div class="space-y-4">
             <input type="text" id="userName" placeholder="Full Name" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
             <input type="text" id="rollNo" placeholder="Roll Number (e.g. B210xxxEE)" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="email" id="userEmail" placeholder="Email ID" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
             
             <div id="status-box" class="pt-4 text-center">
                 <div id="wait-msg" class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 font-medium">
@@ -103,7 +104,6 @@
 
         let questions = [], currentIndex = 0, timeLeft = 0, timerInterval, userAnswers = {};
 
-        // Listen for Admin settings (Real-time Status and Duration)
         db.collection('settings').doc('quizStatus').onSnapshot(doc => {
             if(!doc.exists) return;
             const d = doc.data();
@@ -112,7 +112,6 @@
                 btn.classList.remove('hidden'); 
                 msg.classList.add('hidden');
                 document.getElementById('set-time-display').innerText = d.duration || 10;
-                // Pre-set timeLeft based on admin value
                 if(timeLeft === 0) timeLeft = (d.duration || 10) * 60;
             } else {
                 btn.classList.add('hidden'); 
@@ -121,15 +120,16 @@
         });
 
         async function startQuiz() {
-            const name = document.getElementById('userName').value, roll = document.getElementById('rollNo').value;
-            if(!name || !roll) return alert("Please enter your name and roll number.");
+            const name = document.getElementById('userName').value, 
+                  roll = document.getElementById('rollNo').value,
+                  email = document.getElementById('userEmail').value;
+            if(!name || !roll || !email) return alert("Please enter your name, roll number, and email.");
 
             const qSnap = await db.collection('questions').get();
             let rawQuestions = qSnap.docs.map(doc => ({id: doc.id, ...doc.data()}));
             
             if(rawQuestions.length === 0) return alert("Quiz content is not ready yet.");
 
-            // Fisher-Yates Shuffle Algorithm for unique randomization
             for (let i = rawQuestions.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [rawQuestions[i], rawQuestions[j]] = [rawQuestions[j], rawQuestions[i]];
@@ -189,12 +189,10 @@
 
         async function submitFinal() {
             let score = 0;
-            // Calculate score from userAnswers object
             Object.values(userAnswers).forEach(a => { 
                 if(a.selected === a.correct) score += parseInt(a.pts); 
             });
             
-            // Collect Feedback (Rating 1-5)
             const feedback = {
                 inf: document.querySelector('input[name="f_inf"]:checked').value,
                 org: document.querySelector('input[name="f_org"]:checked').value,
@@ -205,15 +203,16 @@
                 await db.collection('submissions').add({
                     name: document.getElementById('userName').value,
                     rollNo: document.getElementById('rollNo').value,
+                    email: document.getElementById('userEmail').value,
                     score: score,
                     feedback: feedback,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                alert("PoSH Program Quiz submitted successfully! Thank you.");
+                alert("PoSH Program Quiz submitted successfully!");
                 location.reload();
             } catch (error) {
                 console.error("Submission Error: ", error);
-                alert("Error submitting quiz. Please try again.");
+                alert("Error submitting. Please try again.");
             }
         }
     </script>
