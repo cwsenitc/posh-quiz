@@ -143,7 +143,7 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        const adminEmails = ["maddula_m241070ee@nitc.ac.in", "sbuvana@nitc.ac.in"];
+        const adminEmails = ["maddula_m241070ee@nitc.ac.in", "sbuvana@nitc.ac.in", "vrindavarma@nitc.ac.in", "manju@nitc.ac.in"];
         let currentSortOrder = 'desc';
         let submissionUnsubscribe = null;
 
@@ -251,7 +251,9 @@
                 snap.forEach(doc => {
                     const s = doc.data();
                     if(s.feedback) { tInf += parseInt(s.feedback.inf); tOrg += parseInt(s.feedback.org); tRate += parseInt(s.feedback.rate); count++; }
-                    const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...';
+                    
+                    // MODIFIED: Added hour, minute, second for display
+                    const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) : '...';
                     
                     body.innerHTML += `
                         <tr class="border-b border-slate-800 hover:bg-slate-800/30 transition">
@@ -305,7 +307,6 @@
         async function deleteQ(id) { if(confirm("Delete?")) await db.collection('questions').doc(id).delete(); }
         async function deleteEntry(id) { if(confirm("Clear?")) await db.collection('submissions').doc(id).delete(); }
 
-        // NEW: Clear All Submissions
         async function clearAllSubmissions() {
             if(confirm("Are you absolutely sure you want to DELETE ALL student responses? This cannot be undone.")) {
                 const snap = await db.collection('submissions').get();
@@ -321,7 +322,17 @@
             let csv = "Name,RollNo,Email,Score,SubmittedAt,InfRating,OrgRating,OverallRating\n";
             snap.forEach(doc => {
                 const s = doc.data();
-                const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleString().replace(',', '') : 'N/A';
+                
+                // MODIFIED: Using locale-aware string with seconds and removing comma for CSV formatting
+                const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleString('en-GB', {
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric', 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit'
+                }).replace(',', '') : 'N/A';
+
                 csv += `"${s.name}","${s.rollNo}","${s.email || 'N/A'}",${s.score},"${timeStr}",${s.feedback ? s.feedback.inf : 0},${s.feedback ? s.feedback.org : 0},${s.feedback ? s.feedback.rate : 0}\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -329,7 +340,6 @@
             const a = document.createElement('a'); a.href = url; a.download = 'results.csv'; a.click();
         }
 
-        // NEW: Download Questions as PDF
         async function downloadQuestionsPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
