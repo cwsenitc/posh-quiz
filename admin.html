@@ -10,7 +10,11 @@
 </head>
 <body class="bg-slate-50 min-h-screen">
 
-    <div id="login-screen" class="flex items-center justify-center min-h-screen">
+    <div id="loading-screen" class="flex items-center justify-center min-h-screen bg-slate-50 fixed inset-0 z-50">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+    </div>
+
+    <div id="login-screen" class="hidden flex items-center justify-center min-h-screen">
         <div class="bg-white p-12 rounded-3xl shadow-2xl text-center">
             <h1 class="text-3xl font-black mb-8 text-slate-800">Admin Login</h1>
             <button onclick="login()" class="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-bold shadow-lg hover:bg-indigo-700 transition">Sign in with Google</button>
@@ -132,19 +136,40 @@
         const auth = firebase.auth();
 
         const adminEmails = ["maddula_m241070ee@nitc.ac.in", "sbuvana@nitc.ac.in"];
-        
         let currentSortOrder = 'desc';
         let submissionUnsubscribe = null;
+
+        // NEW: Auth State Listener (Runs on page load/refresh)
+        auth.onAuthStateChanged(user => {
+            document.getElementById('loading-screen').classList.add('hidden');
+            if (user && adminEmails.includes(user.email)) {
+                showDashboard();
+            } else {
+                showLogin();
+            }
+        });
 
         function login() {
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider).then(res => {
                 if(adminEmails.includes(res.user.email)) {
-                    document.getElementById('login-screen').classList.add('hidden');
-                    document.getElementById('dashboard').classList.remove('hidden');
-                    setupLiveListeners();
-                } else { alert("Unauthorized!"); auth.signOut(); }
+                    showDashboard();
+                } else { 
+                    alert("Unauthorized!"); 
+                    auth.signOut(); 
+                }
             }).catch(err => alert("Login failed"));
+        }
+
+        function showDashboard() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            setupLiveListeners();
+        }
+
+        function showLogin() {
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
         }
 
         function toggleSort() {
@@ -241,14 +266,13 @@
                 const list = document.getElementById('q-list');
                 document.getElementById('live-q-count').innerText = snap.size;
                 let totalPts = 0;
-                let qIndex = 1; // Counter for question numbering
+                let qIndex = 1;
                 list.innerHTML = '';
                 snap.forEach(doc => {
                     const q = doc.data();
                     totalPts += (parseInt(q.points) || 0);
                     const div = document.createElement('div');
                     div.className = "p-3 bg-slate-50 border rounded-xl flex justify-between items-center text-xs gap-4";
-                    // Added qIndex here
                     div.innerHTML = `<span class="flex-1 font-bold"><span class="text-slate-400 mr-2">${qIndex}.</span>${q.text} <span class="text-indigo-400">(${q.points}pts)</span></span><div class="flex gap-2 flex-shrink-0"><button onclick='editQuestion("${doc.id}", ${JSON.stringify(q)})' class="text-indigo-600 font-bold">Edit</button><button onclick='deleteQ("${doc.id}")' class="text-red-500 font-bold">X</button></div>`;
                     list.appendChild(div);
                     qIndex++;
@@ -283,7 +307,7 @@
             const a = document.createElement('a'); a.href = url; a.download = 'results.csv'; a.click();
         }
 
-        function logout() { auth.signOut(); location.reload(); }
+        function logout() { auth.signOut(); }
     </script>
 </body>
 </html>
