@@ -221,7 +221,6 @@
                     if(s.feedback) { tInf += parseInt(s.feedback.inf); tOrg += parseInt(s.feedback.org); tRate += parseInt(s.feedback.rate); count++; }
                     const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...';
                     
-                    // Table Rows Styled for Dark Mode
                     body.innerHTML += `
                         <tr class="border-b border-slate-800 hover:bg-slate-800/30 transition">
                             <td class="p-4 font-mono text-indigo-400">${s.rollNo}</td>
@@ -242,14 +241,17 @@
                 const list = document.getElementById('q-list');
                 document.getElementById('live-q-count').innerText = snap.size;
                 let totalPts = 0;
+                let qIndex = 1; // Counter for question numbering
                 list.innerHTML = '';
                 snap.forEach(doc => {
                     const q = doc.data();
                     totalPts += (parseInt(q.points) || 0);
                     const div = document.createElement('div');
                     div.className = "p-3 bg-slate-50 border rounded-xl flex justify-between items-center text-xs gap-4";
-                    div.innerHTML = `<span class="flex-1 font-bold">${q.text} <span class="text-indigo-400">(${q.points}pts)</span></span><div class="flex gap-2 flex-shrink-0"><button onclick='editQuestion("${doc.id}", ${JSON.stringify(q)})' class="text-indigo-600 font-bold">Edit</button><button onclick='deleteQ("${doc.id}")' class="text-red-500 font-bold">X</button></div>`;
+                    // Added qIndex here
+                    div.innerHTML = `<span class="flex-1 font-bold"><span class="text-slate-400 mr-2">${qIndex}.</span>${q.text} <span class="text-indigo-400">(${q.points}pts)</span></span><div class="flex gap-2 flex-shrink-0"><button onclick='editQuestion("${doc.id}", ${JSON.stringify(q)})' class="text-indigo-600 font-bold">Edit</button><button onclick='deleteQ("${doc.id}")' class="text-red-500 font-bold">X</button></div>`;
                     list.appendChild(div);
+                    qIndex++;
                 });
                 document.getElementById('total-points-count').innerText = totalPts;
             });
