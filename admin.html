@@ -119,7 +119,7 @@
                             <tr>
                                 <th class="p-4">Roll No</th>
                                 <th class="p-4">Name</th>
-                                <th class="p-4 cursor-pointer hover:text-indigo-400" onclick="toggleSort()">Score <span id="sort-icon">▼</span></th>
+                                <th class="p-4">Score</th>
                                 <th class="p-4">Time</th>
                                 <th class="p-4">Manage</th>
                             </tr>
@@ -145,7 +145,6 @@
         const auth = firebase.auth();
 
         const adminEmails = ["maddula_m241070ee@nitc.ac.in", "sbuvana@nitc.ac.in"];
-        let currentSortOrder = 'desc';
         let submissionUnsubscribe = null;
 
         auth.onAuthStateChanged(user => {
@@ -178,12 +177,6 @@
         function showLogin() {
             document.getElementById('login-screen').classList.remove('hidden');
             document.getElementById('dashboard').classList.add('hidden');
-        }
-
-        function toggleSort() {
-            currentSortOrder = (currentSortOrder === 'desc') ? 'asc' : 'desc';
-            document.getElementById('sort-icon').innerText = (currentSortOrder === 'desc') ? '▼' : '▲';
-            setupLiveListeners();
         }
 
         async function saveQuestion() {
@@ -244,36 +237,50 @@
             });
 
             if(submissionUnsubscribe) submissionUnsubscribe();
-            submissionUnsubscribe = db.collection('submissions').orderBy('score', currentSortOrder).onSnapshot(snap => {
-                let tInf = 0, tOrg = 0, tRate = 0, count = 0;
-                document.getElementById('total-submissions-count').innerText = snap.size;
-                const body = document.getElementById('leaderboard-body');
-                body.innerHTML = '';
-                snap.forEach(doc => {
-                    const s = doc.data();
-                    if(s.feedback) { tInf += parseInt(s.feedback.inf); tOrg += parseInt(s.feedback.org); tRate += parseInt(s.feedback.rate); count++; }
+            
+            // AUTOMATIC SORTING: Score (Descending) then Timestamp (Ascending)
+            submissionUnsubscribe = db.collection('submissions')
+                .orderBy('score', 'desc')
+                .orderBy('timestamp', 'asc')
+                .onSnapshot(snap => {
+                    let tInf = 0, tOrg = 0, tRate = 0, count = 0;
+                    document.getElementById('total-submissions-count').innerText = snap.size;
+                    const body = document.getElementById('leaderboard-body');
+                    body.innerHTML = '';
                     
-                    const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) : '...';
+                    snap.forEach(doc => {
+                        const s = doc.data();
+                        if(s.feedback) { 
+                            tInf += (parseInt(s.feedback.inf) || 0); 
+                            tOrg += (parseInt(s.feedback.org) || 0); 
+                            tRate += (parseInt(s.feedback.rate) || 0); 
+                            count++; 
+                        }
+                        
+                        const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) : '...';
+                        
+                        body.innerHTML += `
+                            <tr class="border-b border-slate-800 hover:bg-slate-800/30 transition">
+                                <td class="p-4 font-mono text-indigo-400">${s.rollNo}</td>
+                                <td class="p-4 font-bold text-white">${s.name}</td>
+                                <td class="p-4 text-emerald-400 font-black text-lg">${s.score}</td>
+                                <td class="p-4 text-slate-500 text-xs">${timeStr}</td>
+                                <td class="p-4"><button onclick="deleteEntry('${doc.id}')" class="text-red-500 hover:text-red-300 font-bold text-[10px] uppercase">Clear</button></td>
+                            </tr>`;
+                    });
                     
-                    body.innerHTML += `
-                        <tr class="border-b border-slate-800 hover:bg-slate-800/30 transition">
-                            <td class="p-4 font-mono text-indigo-400">${s.rollNo}</td>
-                            <td class="p-4 font-bold text-white">${s.name}</td>
-                            <td class="p-4 text-emerald-400 font-black text-lg">${s.score}</td>
-                            <td class="p-4 text-slate-500 text-xs">${timeStr}</td>
-                            <td class="p-4"><button onclick="deleteEntry('${doc.id}')" class="text-red-500 hover:text-red-300 font-bold text-[10px] uppercase">Clear</button></td>
-                        </tr>`;
+                    if(count > 0) {
+                        document.getElementById('avg-inf').innerText = (tInf/count).toFixed(1);
+                        document.getElementById('avg-org').innerText = (tOrg/count).toFixed(1);
+                        document.getElementById('avg-rate').innerText = (tRate/count).toFixed(1);
+                    } else {
+                        document.getElementById('avg-inf').innerText = "0.0";
+                        document.getElementById('avg-org').innerText = "0.0";
+                        document.getElementById('avg-rate').innerText = "0.0";
+                    }
+                }, err => {
+                    console.error("Sorting error: Make sure a composite index for score (desc) and timestamp (asc) is created in Firebase.", err);
                 });
-                if(count > 0) {
-                    document.getElementById('avg-inf').innerText = (tInf/count).toFixed(1);
-                    document.getElementById('avg-org').innerText = (tOrg/count).toFixed(1);
-                    document.getElementById('avg-rate').innerText = (tRate/count).toFixed(1);
-                } else {
-                    document.getElementById('avg-inf').innerText = "0.0";
-                    document.getElementById('avg-org').innerText = "0.0";
-                    document.getElementById('avg-rate').innerText = "0.0";
-                }
-            });
 
             db.collection('questions').onSnapshot(snap => {
                 const list = document.getElementById('q-list');
@@ -318,16 +325,22 @@
         }
 
         async function downloadCSV() {
-            const snap = await db.collection('submissions').orderBy('score', currentSortOrder).get();
-            let csv = "Name,RollNo,Email,Score,SubmittedAt,InfRating,OrgRating,OverallRating\n";
+            // CSV follows the same tie-break sorting rule
+            const snap = await db.collection('submissions')
+                .orderBy('score', 'desc')
+                .orderBy('timestamp', 'asc')
+                .get();
+                
+            let csv = "Rank,Name,RollNo,Email,Score,SubmittedAt,InfRating,OrgRating,OverallRating\n";
+            let rank = 1;
             snap.forEach(doc => {
                 const s = doc.data();
                 const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleString('en-GB').replace(',', '') : 'N/A';
-                csv += `"${s.name}","${s.rollNo}","${s.email || 'N/A'}",${s.score},"${timeStr}",${s.feedback ? s.feedback.inf : 0},${s.feedback ? s.feedback.org : 0},${s.feedback ? s.feedback.rate : 0}\n`;
+                csv += `${rank++},"${s.name}","${s.rollNo}","${s.email || 'N/A'}",${s.score},"${timeStr}",${s.feedback ? s.feedback.inf : 0},${s.feedback ? s.feedback.org : 0},${s.feedback ? s.feedback.rate : 0}\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = 'results.csv'; a.click();
+            const a = document.createElement('a'); a.href = url; a.download = 'PoSH_Results_Ranked.csv'; a.click();
         }
 
         async function downloadQuestionsPDF() {
@@ -350,7 +363,7 @@
                 theme: 'striped',
                 headStyles: { fillColor: [79, 70, 229] }
             });
-            doc.save('Question_Bank.pdf');
+            doc.save('PoSH_Question_Bank.pdf');
         }
 
         function logout() { auth.signOut(); }
