@@ -243,7 +243,7 @@
             });
 
             if(submissionUnsubscribe) submissionUnsubscribe();
-            submissionUnsubscribe = db.collection('submissions').orderBy('score', currentSortOrder).onSnapshot(snap => {
+            submissionUnsubscribe = db.collection('submissions').orderBy('score', currentSortOrder).orderBy('timestamp', 'asc').onSnapshot(snap => {
                 let tInf = 0, tOrg = 0, tRate = 0, count = 0;
                 document.getElementById('total-submissions-count').innerText = snap.size;
                 const body = document.getElementById('leaderboard-body');
@@ -251,14 +251,14 @@
                 snap.forEach(doc => {
                     const s = doc.data();
                     if(s.feedback) { tInf += parseInt(s.feedback.inf); tOrg += parseInt(s.feedback.org); tRate += parseInt(s.feedback.rate); count++; }
-                    const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...';
+                    const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) : '...';
                     
                     body.innerHTML += `
                         <tr class="border-b border-slate-800 hover:bg-slate-800/30 transition">
                             <td class="p-4 font-mono text-indigo-400">${s.rollNo}</td>
                             <td class="p-4 font-bold text-white">${s.name}</td>
                             <td class="p-4 text-emerald-400 font-black text-lg">${s.score}</td>
-                            <td class="p-4 text-slate-500">${timeStr}</td>
+                            <td class="p-4 text-slate-500 whitespace-nowrap">${timeStr}</td>
                             <td class="p-4"><button onclick="deleteEntry('${doc.id}')" class="text-red-500 hover:text-red-300 font-bold text-xs uppercase tracking-widest">Clear</button></td>
                         </tr>`;
                 });
@@ -305,7 +305,6 @@
         async function deleteQ(id) { if(confirm("Delete?")) await db.collection('questions').doc(id).delete(); }
         async function deleteEntry(id) { if(confirm("Clear?")) await db.collection('submissions').doc(id).delete(); }
 
-        // NEW: Clear All Submissions
         async function clearAllSubmissions() {
             if(confirm("Are you absolutely sure you want to DELETE ALL student responses? This cannot be undone.")) {
                 const snap = await db.collection('submissions').get();
@@ -317,7 +316,7 @@
         }
 
         async function downloadCSV() {
-            const snap = await db.collection('submissions').orderBy('score', currentSortOrder).get();
+            const snap = await db.collection('submissions').orderBy('score', currentSortOrder).orderBy('timestamp', 'asc').get();
             let csv = "Name,RollNo,Email,Score,SubmittedAt,InfRating,OrgRating,OverallRating\n";
             snap.forEach(doc => {
                 const s = doc.data();
@@ -329,7 +328,6 @@
             const a = document.createElement('a'); a.href = url; a.download = 'results.csv'; a.click();
         }
 
-        // NEW: Download Questions as PDF
         async function downloadQuestionsPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
