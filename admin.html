@@ -120,7 +120,6 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // UPDATED: Added second email to an array
         const adminEmails = [
             "maddula_m241070ee@nitc.ac.in",
             "sbuvana@nitc.ac.in"
@@ -132,7 +131,6 @@
         function login() {
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider).then(res => {
-                // UPDATED: Now checks if the email is in the adminEmails list
                 if(adminEmails.includes(res.user.email)) {
                     document.getElementById('login-screen').classList.add('hidden');
                     document.getElementById('dashboard').classList.remove('hidden');
@@ -244,8 +242,9 @@
                 snap.forEach(doc => {
                     const q = doc.data();
                     const div = document.createElement('div');
-                    div.className = "p-3 bg-slate-50 border rounded-xl flex justify-between items-center text-xs";
-                    div.innerHTML = `<span class="truncate w-32 font-bold">${q.text}</span><div class="flex gap-2"><button onclick='editQuestion("${doc.id}", ${JSON.stringify(q)})' class="text-indigo-600 font-bold">Edit</button><button onclick='deleteQ("${doc.id}")' class="text-red-500 font-bold">X</button></div>`;
+                    div.className = "p-3 bg-slate-50 border rounded-xl flex justify-between items-center text-xs gap-4";
+                    // Modified span: Removed truncate and w-32, added flex-1
+                    div.innerHTML = `<span class="flex-1 font-bold">${q.text}</span><div class="flex gap-2 flex-shrink-0"><button onclick='editQuestion("${doc.id}", ${JSON.stringify(q)})' class="text-indigo-600 font-bold">Edit</button><button onclick='deleteQ("${doc.id}")' class="text-red-500 font-bold">X</button></div>`;
                     list.appendChild(div);
                 });
             });
