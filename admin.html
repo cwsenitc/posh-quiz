@@ -19,7 +19,7 @@
 
     <div id="dashboard" class="hidden p-8 max-w-7xl mx-auto">
         <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-6 bg-white p-6 rounded-2xl shadow-sm border">
-            <div class="flex items-center gap-6">
+            <div class="flex flex-wrap items-center gap-6">
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-bold text-slate-400">STATUS:</span>
                     <button id="toggle-btn" onclick="toggleQuiz()" class="text-xs font-black px-6 py-2 rounded-full bg-red-500 text-white transition">OFFLINE</button>
@@ -30,11 +30,22 @@
                     <button onclick="updateDuration()" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-xs font-bold border">SET</button>
                 </div>
             </div>
-            <div class="flex items-center gap-2 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100">
-                <span class="text-xs font-bold text-indigo-400 uppercase">Live Questions:</span>
-                <span id="live-q-count" class="text-lg font-black text-indigo-600">0</span>
+
+            <div class="flex flex-wrap gap-4 items-center">
+                <div class="flex items-center gap-2 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100">
+                    <span class="text-xs font-bold text-indigo-400 uppercase">Q:</span>
+                    <span id="live-q-count" class="text-lg font-black text-indigo-600">0</span>
+                </div>
+                <div class="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100">
+                    <span class="text-xs font-bold text-emerald-400 uppercase">Total Points:</span>
+                    <span id="total-points-count" class="text-lg font-black text-emerald-600">0</span>
+                </div>
+                <div class="flex items-center gap-2 bg-amber-50 px-4 py-2 rounded-xl border border-amber-100">
+                    <span class="text-xs font-bold text-amber-400 uppercase">Submissions:</span>
+                    <span id="total-submissions-count" class="text-lg font-black text-amber-600">0</span>
+                </div>
+                <button onclick="logout()" class="text-red-500 font-bold ml-4">Logout</button>
             </div>
-            <button onclick="logout()" class="text-red-500 font-bold">Logout</button>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -81,7 +92,7 @@
                         <button id="cancel-edit" onclick="resetForm()" class="hidden bg-slate-100 text-slate-600 px-4 rounded-xl border">X</button>
                     </div>
                 </div>
-                <div id="q-list" class="mt-8 space-y-2 overflow-y-auto max-h-[300px]"></div>
+                <div id="q-list" class="mt-8 space-y-2 overflow-y-auto max-h-[400px]"></div>
             </div>
 
             <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border overflow-x-auto">
@@ -120,10 +131,7 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        const adminEmails = [
-            "maddula_m241070ee@nitc.ac.in",
-            "sbuvana@nitc.ac.in"
-        ];
+        const adminEmails = ["maddula_m241070ee@nitc.ac.in", "sbuvana@nitc.ac.in"];
         
         let currentSortOrder = 'desc';
         let submissionUnsubscribe = null;
@@ -135,14 +143,8 @@
                     document.getElementById('login-screen').classList.add('hidden');
                     document.getElementById('dashboard').classList.remove('hidden');
                     setupLiveListeners();
-                } else { 
-                    alert("Unauthorized!"); 
-                    auth.signOut(); 
-                }
-            }).catch(err => {
-                console.error(err);
-                alert("Login failed");
-            });
+                } else { alert("Unauthorized!"); auth.signOut(); }
+            }).catch(err => alert("Login failed"));
         }
 
         function toggleSort() {
@@ -199,6 +201,7 @@
         }
 
         function setupLiveListeners() {
+            // Status/Duration Listener
             db.collection('settings').doc('quizStatus').onSnapshot(doc => {
                 if(!doc.exists) return;
                 const d = doc.data();
@@ -208,17 +211,17 @@
                 document.getElementById('quiz-duration-input').value = d.duration || 10;
             });
 
+            // Submissions & Submission Count Listener
             if(submissionUnsubscribe) submissionUnsubscribe();
             submissionUnsubscribe = db.collection('submissions').orderBy('score', currentSortOrder).onSnapshot(snap => {
                 let tInf = 0, tOrg = 0, tRate = 0, count = 0;
+                document.getElementById('total-submissions-count').innerText = snap.size;
                 const body = document.getElementById('leaderboard-body');
                 body.innerHTML = '';
                 snap.forEach(doc => {
                     const s = doc.data();
                     if(s.feedback) { tInf += parseInt(s.feedback.inf); tOrg += parseInt(s.feedback.org); tRate += parseInt(s.feedback.rate); count++; }
-                    
                     const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...';
-
                     body.innerHTML += `
                         <tr class="border-b">
                             <td class="p-4 font-mono">${s.rollNo}</td>
@@ -235,18 +238,22 @@
                 }
             });
 
+            // Questions & Total Points Listener
             db.collection('questions').onSnapshot(snap => {
                 const list = document.getElementById('q-list');
                 document.getElementById('live-q-count').innerText = snap.size;
+                
+                let totalPts = 0;
                 list.innerHTML = '';
                 snap.forEach(doc => {
                     const q = doc.data();
+                    totalPts += (parseInt(q.points) || 0);
                     const div = document.createElement('div');
                     div.className = "p-3 bg-slate-50 border rounded-xl flex justify-between items-center text-xs gap-4";
-                    // Modified span: Removed truncate and w-32, added flex-1
-                    div.innerHTML = `<span class="flex-1 font-bold">${q.text}</span><div class="flex gap-2 flex-shrink-0"><button onclick='editQuestion("${doc.id}", ${JSON.stringify(q)})' class="text-indigo-600 font-bold">Edit</button><button onclick='deleteQ("${doc.id}")' class="text-red-500 font-bold">X</button></div>`;
+                    div.innerHTML = `<span class="flex-1 font-bold">${q.text} <span class="text-indigo-400">(${q.points}pts)</span></span><div class="flex gap-2 flex-shrink-0"><button onclick='editQuestion("${doc.id}", ${JSON.stringify(q)})' class="text-indigo-600 font-bold">Edit</button><button onclick='deleteQ("${doc.id}")' class="text-red-500 font-bold">X</button></div>`;
                     list.appendChild(div);
                 });
+                document.getElementById('total-points-count').innerText = totalPts;
             });
         }
 
