@@ -7,6 +7,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body class="bg-slate-50 min-h-screen">
 
@@ -69,7 +71,10 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="bg-white p-6 rounded-2xl shadow-sm border h-fit">
-                <h2 id="form-title" class="font-bold text-lg mb-6">Manage Question</h2>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="form-title" class="font-bold text-lg">Manage Question</h2>
+                    <button onclick="downloadQuestionsPDF()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1 rounded-lg font-bold border">Download PDF</button>
+                </div>
                 <div class="space-y-3">
                     <input type="hidden" id="edit-id">
                     <textarea id="q-text" placeholder="Question Text" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
@@ -100,9 +105,12 @@
             </div>
 
             <div class="lg:col-span-2 bg-slate-900 p-6 rounded-3xl shadow-2xl border-t-4 border-indigo-500 overflow-x-auto">
-                <div class="flex justify-between items-center mb-6">
+                <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
                     <h2 class="font-black text-xl text-white tracking-tight">Leaderboard - Student Submissions</h2>
-                    <button onclick="downloadCSV()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl text-sm font-bold transition shadow-lg">Export CSV</button>
+                    <div class="flex gap-2">
+                        <button onclick="clearAllSubmissions()" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition shadow-lg">Clear All</button>
+                        <button onclick="downloadCSV()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl text-sm font-bold transition shadow-lg">Export CSV</button>
+                    </div>
                 </div>
                 <table class="w-full text-left">
                     <thead class="bg-slate-800/50 border-b border-slate-700 text-[10px] uppercase font-bold text-slate-400">
@@ -139,7 +147,6 @@
         let currentSortOrder = 'desc';
         let submissionUnsubscribe = null;
 
-        // NEW: Auth State Listener (Runs on page load/refresh)
         auth.onAuthStateChanged(user => {
             document.getElementById('loading-screen').classList.add('hidden');
             if (user && adminEmails.includes(user.email)) {
@@ -259,6 +266,10 @@
                     document.getElementById('avg-inf').innerText = (tInf/count).toFixed(1);
                     document.getElementById('avg-org').innerText = (tOrg/count).toFixed(1);
                     document.getElementById('avg-rate').innerText = (tRate/count).toFixed(1);
+                } else {
+                    document.getElementById('avg-inf').innerText = "0.0";
+                    document.getElementById('avg-org').innerText = "0.0";
+                    document.getElementById('avg-rate').innerText = "0.0";
                 }
             });
 
@@ -294,6 +305,17 @@
         async function deleteQ(id) { if(confirm("Delete?")) await db.collection('questions').doc(id).delete(); }
         async function deleteEntry(id) { if(confirm("Clear?")) await db.collection('submissions').doc(id).delete(); }
 
+        // NEW: Clear All Submissions
+        async function clearAllSubmissions() {
+            if(confirm("Are you absolutely sure you want to DELETE ALL student responses? This cannot be undone.")) {
+                const snap = await db.collection('submissions').get();
+                const batch = db.batch();
+                snap.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+                alert("All responses cleared.");
+            }
+        }
+
         async function downloadCSV() {
             const snap = await db.collection('submissions').orderBy('score', currentSortOrder).get();
             let csv = "Name,RollNo,Email,Score,SubmittedAt,InfRating,OrgRating,OverallRating\n";
@@ -305,6 +327,40 @@
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = 'results.csv'; a.click();
+        }
+
+        // NEW: Download Questions as PDF
+        async function downloadQuestionsPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const snap = await db.collection('questions').get();
+            
+            doc.setFontSize(18);
+            doc.text("PoSH Quiz - Question Bank", 14, 20);
+            doc.setFontSize(10);
+            doc.text("Generated on: " + new Date().toLocaleString(), 14, 28);
+
+            const tableData = [];
+            let i = 1;
+            snap.forEach(qDoc => {
+                const q = qDoc.data();
+                const optionsStr = `A: ${q.options[0]}\nB: ${q.options[1]}\nC: ${q.options[2]}\nD: ${q.options[3]}`;
+                tableData.push([i++, q.text, optionsStr, q.correct, q.points]);
+            });
+
+            doc.autoTable({
+                startY: 35,
+                head: [['#', 'Question', 'Options', 'Correct Answer', 'Points']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [79, 70, 229] },
+                columnStyles: {
+                    1: { cellWidth: 60 },
+                    2: { cellWidth: 60 }
+                }
+            });
+
+            doc.save('Question_Bank.pdf');
         }
 
         function logout() { auth.signOut(); }
