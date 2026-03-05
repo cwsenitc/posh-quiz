@@ -7,6 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        .no-select { user-select: none; }
+    </style>
 </head>
 <body class="bg-slate-50 min-h-screen flex items-center justify-center p-4 font-sans no-select">
 
@@ -44,7 +47,7 @@
             
             <div id="typing-container" class="hidden space-y-4">
                 <input type="text" id="typing-input" placeholder="Type your answer here..." class="w-full p-4 border-2 border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-semibold text-lg">
-                <button onclick="submitTypedAnswer()" class="w-full bg-slate-800 text-white py-4 rounded-xl font-bold">Next Question</button>
+                <button id="typing-submit-btn" onclick="submitTypedAnswer()" class="w-full bg-slate-800 text-white py-4 rounded-xl font-bold transition hover:bg-slate-700">Next Question</button>
             </div>
         </div>
     </div>
@@ -53,9 +56,17 @@
         <div class="mb-6 text-emerald-500">
             <svg class="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         </div>
-        <h2 class="text-3xl font-black text-slate-800 mb-4">Submitted!</h2>
-        <p class="text-slate-600 mb-8">Your quiz responses have been recorded successfully.</p>
-        <div class="p-4 bg-slate-50 rounded-xl border text-sm text-slate-500 italic">You may now close this window.</div>
+        <h2 class="text-3xl font-black text-slate-800 mb-2">Submitted!</h2>
+        <p class="text-slate-600 mb-6">Your responses have been recorded successfully.</p>
+        
+        <div class="bg-indigo-50 rounded-2xl p-6 mb-8 border border-indigo-100">
+            <p class="text-indigo-400 text-xs font-bold uppercase tracking-widest mb-1">Your Final Score</p>
+            <div class="text-5xl font-black text-indigo-600" id="display-final-score">0</div>
+        </div>
+
+        <div class="p-4 bg-slate-50 rounded-xl border text-sm text-slate-500 italic">
+            You may now close this window.
+        </div>
     </div>
 
     <script>
@@ -73,7 +84,12 @@
         let questions = [], currentIndex = 0, timeLeft = 0, timerInterval, userAnswers = {};
         let isQuizActiveInUI = false, questionLimit = 0; 
 
-        window.onload = () => { if (localStorage.getItem("posh_quiz_submitted") === "true") showThankYou(); };
+        window.onload = () => { 
+            if (localStorage.getItem("posh_quiz_submitted") === "true") {
+                const savedScore = localStorage.getItem("posh_quiz_score") || "0";
+                showThankYou(savedScore);
+            }
+        };
 
         db.collection('settings').doc('quizStatus').onSnapshot(doc => {
             if(!doc.exists || localStorage.getItem("posh_quiz_submitted") === "true") return;
@@ -99,7 +115,6 @@
             const qSnap = await db.collection('questions').get();
             questions = qSnap.docs.map(doc => ({id: doc.id, ...doc.data()}));
             
-            // Shuffle and Limit
             questions.sort(() => Math.random() - 0.5);
             if(questionLimit > 0) questions = questions.slice(0, questionLimit);
             
@@ -112,17 +127,21 @@
 
         function showQuestion() {
             const q = questions[currentIndex];
+            const isLast = (currentIndex === questions.length - 1);
+            
             document.getElementById('q-count').innerText = `Question ${currentIndex + 1} of ${questions.length}`;
             document.getElementById('q-text').innerText = q.text;
             
             const mcqBox = document.getElementById('mcq-container');
             const typeBox = document.getElementById('typing-container');
             const inputField = document.getElementById('typing-input');
+            const typeBtn = document.getElementById('typing-submit-btn');
 
             if(q.type === 'typing') {
                 mcqBox.classList.add('hidden');
                 typeBox.classList.remove('hidden');
                 inputField.value = '';
+                typeBtn.innerText = isLast ? "Submit Quiz" : "Next Question";
                 inputField.focus();
             } else {
                 typeBox.classList.add('hidden');
@@ -146,7 +165,6 @@
 
         function recordAnswer(val) {
             const q = questions[currentIndex];
-            // Normalize for comparison: trim whitespace and lowercase
             const cleanUser = val.trim().toLowerCase();
             const cleanCorrect = q.correct.trim().toLowerCase();
             const isCorrect = cleanUser === cleanCorrect;
@@ -184,13 +202,19 @@
                     score: totalScore,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                
                 localStorage.setItem("posh_quiz_submitted", "true");
-                showThankYou();
-            } catch (e) { alert("Error saving response."); }
+                localStorage.setItem("posh_quiz_score", totalScore);
+                showThankYou(totalScore);
+            } catch (e) { 
+                console.error(e);
+                alert("Error saving response. Please check your connection."); 
+            }
         }
 
-        function showThankYou() {
+        function showThankYou(score) {
             document.querySelectorAll('div[id$="-screen"]').forEach(s => s.classList.add('hidden'));
+            document.getElementById('display-final-score').innerText = score;
             document.getElementById('thank-you-screen').classList.remove('hidden');
         }
     </script>
