@@ -85,14 +85,14 @@
         let isQuizActiveInUI = false, questionLimit = 0; 
 
         window.onload = () => { 
-            if (localStorage.getItem("posh_quiz_submitted") === "true") {
-                const savedScore = localStorage.getItem("posh_quiz_score") || "0";
+            if (localStorage.getItem("cwse_quiz_submitted") === "true") {
+                const savedScore = localStorage.getItem("cwse_quiz_score") || "0";
                 showThankYou(savedScore);
             }
         };
 
         db.collection('settings').doc('quizStatus').onSnapshot(doc => {
-            if(!doc.exists || localStorage.getItem("posh_quiz_submitted") === "true") return;
+            if(!doc.exists || localStorage.getItem("cwse_quiz_submitted") === "true") return;
             const d = doc.data();
             const btn = document.getElementById('start-btn'), msg = document.getElementById('wait-msg');
             questionLimit = d.questionLimit || 0;
@@ -203,8 +203,8 @@
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
-                localStorage.setItem("posh_quiz_submitted", "true");
-                localStorage.setItem("posh_quiz_score", totalScore);
+                localStorage.setItem("cwse_quiz_submitted", "true");
+                localStorage.setItem("cwse_quiz_score", totalScore);
                 showThankYou(totalScore);
             } catch (e) { 
                 console.error(e);
