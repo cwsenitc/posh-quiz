@@ -19,134 +19,161 @@
 
     <div id="login-screen" class="hidden flex items-center justify-center min-h-screen p-4">
         <div class="bg-white p-8 md:p-12 rounded-3xl shadow-2xl text-center w-full max-w-md">
-            <h1 class="text-3xl font-black mb-8 text-slate-800">CWSE Quiz - Admin</h1>
+            <h1 class="text-3xl font-black mb-8 text-slate-800 tracking-tight">CWSE Admin Portal</h1>
             <button onclick="login()" class="w-full bg-indigo-600 text-white px-8 py-4 rounded-2xl font-bold shadow-lg hover:bg-indigo-700 transition">Sign in with Google</button>
         </div>
     </div>
 
-    <div id="dashboard" class="hidden p-4 md:p-8 max-w-7xl mx-auto">
-        <div class="flex flex-col lg:flex-row justify-between items-center mb-8 gap-6 bg-white p-6 rounded-2xl shadow-sm border">
-            <div class="flex flex-wrap justify-center md:justify-start items-center gap-4 md:gap-6">
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-400">STATUS:</span>
-                    <button id="toggle-btn" onclick="toggleQuiz()" class="text-xs font-black px-6 py-2 rounded-full bg-red-500 text-white transition">OFFLINE</button>
+    <div id="dashboard" class="hidden">
+        <nav class="bg-slate-900 text-white p-4 sticky top-0 z-40 shadow-xl">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="bg-indigo-600 p-2 rounded-lg font-black text-xl">CWSE</div>
+                    <div>
+                        <h1 class="text-sm font-bold leading-none">Control Center</h1>
+                        <p class="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Admin Dashboard v2.0</p>
+                    </div>
                 </div>
-                
-                <div class="flex flex-wrap items-center gap-3 border-l pl-4">
-                    <div class="flex flex-col">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">Start (IST)</span>
-                        <input type="datetime-local" id="quiz-start-time" class="p-1 border rounded font-bold text-indigo-600 text-xs">
+
+                <div class="flex flex-wrap items-center justify-center gap-6">
+                    <div class="text-center">
+                        <p class="text-[10px] text-slate-500 font-bold uppercase">Questions</p>
+                        <p id="live-q-count" class="text-lg font-black text-indigo-400">0</p>
                     </div>
-                    <div class="flex flex-col">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">End (IST)</span>
-                        <input type="datetime-local" id="quiz-end-time" class="p-1 border rounded font-bold text-indigo-600 text-xs">
+                    <div class="text-center border-l border-slate-700 pl-6">
+                        <p class="text-[10px] text-slate-500 font-bold uppercase">Submissions</p>
+                        <p id="total-submissions-count" class="text-lg font-black text-emerald-400">0</p>
                     </div>
-                    <div class="flex flex-col">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">Mins</span>
-                        <input type="number" id="quiz-duration-input" class="w-14 p-1 text-center border rounded font-bold text-indigo-600 text-xs">
+                    <div class="text-center border-l border-slate-700 pl-6">
+                        <p class="text-[10px] text-slate-500 font-bold uppercase">Max Points</p>
+                        <p id="total-points-count" class="text-lg font-black text-amber-400">0</p>
                     </div>
-                    <div class="flex flex-col">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">Limit</span>
-                        <input type="number" id="quiz-limit-input" class="w-14 p-1 text-center border rounded font-bold text-indigo-600 text-xs">
+                    <button onclick="logout()" class="ml-4 bg-slate-800 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition">Logout</button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="p-4 md:p-8 max-w-7xl mx-auto">
+            <div class="bg-white rounded-3xl shadow-sm border p-6 mb-8">
+                <div class="flex items-center justify-between mb-6 pb-4 border-b">
+                    <h2 class="font-black text-slate-800 flex items-center gap-2">
+                        <span class="w-2 h-6 bg-indigo-600 rounded-full"></span>
+                        QUIZ SCHEDULER (IST)
+                    </h2>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Status:</span>
+                        <button id="toggle-btn" onclick="toggleQuiz()" class="text-[10px] font-black px-4 py-1.5 rounded-full bg-red-500 text-white shadow-lg">OFFLINE</button>
                     </div>
-                    <button onclick="updateSettings()" class="bg-indigo-600 text-white px-4 py-2 mt-3 rounded-lg text-[10px] font-bold shadow-md hover:bg-indigo-700 transition">UPDATE ALL</button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                    <div class="lg:col-span-2 space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase">Starts at:</label>
+                        <div class="flex gap-1">
+                            <input type="date" id="start-date" class="w-full p-2 border rounded-xl text-sm font-bold bg-slate-50">
+                            <select id="start-hh" class="p-2 border rounded-xl text-sm font-bold bg-slate-50"></select>
+                            <select id="start-mm" class="p-2 border rounded-xl text-sm font-bold bg-slate-50"></select>
+                            <select id="start-ap" class="p-2 border rounded-xl text-sm font-bold bg-indigo-50 text-indigo-600">
+                                <option value="AM">AM</option>
+                                <option value="PM">PM</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase">Ends at:</label>
+                        <div class="flex gap-1">
+                            <input type="date" id="end-date" class="w-full p-2 border rounded-xl text-sm font-bold bg-slate-50">
+                            <select id="end-hh" class="p-2 border rounded-xl text-sm font-bold bg-slate-50"></select>
+                            <select id="end-mm" class="p-2 border rounded-xl text-sm font-bold bg-slate-50"></select>
+                            <select id="end-ap" class="p-2 border rounded-xl text-sm font-bold bg-indigo-50 text-indigo-600">
+                                <option value="AM">AM</option>
+                                <option value="PM">PM</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase">Limits:</label>
+                        <div class="flex gap-1">
+                            <input type="number" id="quiz-duration-input" placeholder="Min" class="w-1/2 p-2 border rounded-xl text-sm font-bold bg-slate-50">
+                            <input type="number" id="quiz-limit-input" placeholder="Qty" class="w-1/2 p-2 border rounded-xl text-sm font-bold bg-slate-50">
+                        </div>
+                        <button onclick="updateSettings()" class="w-full bg-indigo-600 text-white py-2 rounded-xl text-xs font-bold shadow-md hover:bg-indigo-700 transition">SYNC SETTINGS</button>
+                    </div>
                 </div>
             </div>
 
-            <div class="flex flex-wrap justify-center gap-4 items-center">
-                <div class="flex items-center gap-2 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100">
-                    <span class="text-xs font-bold text-indigo-400 uppercase">Q:</span>
-                    <span id="live-q-count" class="text-lg font-black text-indigo-600">0</span>
-                </div>
-                <div class="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100">
-                    <span class="text-xs font-bold text-emerald-400 uppercase">Max Pts:</span>
-                    <span id="total-points-count" class="text-lg font-black text-emerald-600">0</span>
-                </div>
-                <div class="flex items-center gap-2 bg-amber-50 px-4 py-2 rounded-xl border border-amber-100">
-                    <span class="text-xs font-bold text-amber-400 uppercase">Subs:</span>
-                    <span id="total-submissions-count" class="text-lg font-black text-amber-600">0</span>
-                </div>
-                <button onclick="logout()" class="text-red-500 font-bold text-sm ml-2">Logout</button>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border h-fit">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 id="form-title" class="font-bold text-lg">Manage Question</h2>
-                    <button onclick="downloadQuestionsPDF()" class="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1 rounded-lg font-bold border">PDF</button>
-                </div>
-                <div class="space-y-3">
-                    <input type="hidden" id="edit-id">
-                    
-                    <select id="q-type" onchange="handleTypeChange()" class="w-full p-3 border rounded-xl outline-none text-sm font-semibold bg-slate-50">
-                        <option value="mcq">Multiple Choice (MCQ)</option>
-                        <option value="typing">Short Answer (Typing)</option>
-                    </select>
-
-                    <textarea id="q-text" placeholder="Question Text" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-                    
-                    <div id="mcq-options" class="grid grid-cols-2 gap-2">
-                        <input type="text" id="opt-a" placeholder="Opt A" class="p-3 border rounded-xl outline-none text-sm w-full">
-                        <input type="text" id="opt-b" placeholder="Opt B" class="p-3 border rounded-xl outline-none text-sm w-full">
-                        <input type="text" id="opt-c" placeholder="Opt C" class="p-3 border rounded-xl outline-none text-sm w-full">
-                        <input type="text" id="opt-d" placeholder="Opt D" class="p-3 border rounded-xl outline-none text-sm w-full">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border h-fit">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="font-bold text-slate-800">Manage Questions</h2>
+                        <button onclick="downloadQuestionsPDF()" class="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1 rounded-lg font-bold border">Export PDF</button>
                     </div>
-
-                    <div id="ans-mcq-wrapper">
-                        <select id="q-ans-mcq" class="w-full p-3 border rounded-xl outline-none text-sm font-semibold text-indigo-600">
-                            <option value="">Select Correct Option</option>
-                            <option value="A">Option A</option>
-                            <option value="B">Option B</option>
-                            <option value="C">Option C</option>
-                            <option value="D">Option D</option>
+                    <div class="space-y-3">
+                        <input type="hidden" id="edit-id">
+                        <select id="q-type" onchange="handleTypeChange()" class="w-full p-3 border rounded-2xl outline-none text-sm font-semibold bg-slate-50">
+                            <option value="mcq">Multiple Choice</option>
+                            <option value="typing">Short Answer</option>
                         </select>
+                        <textarea id="q-text" placeholder="Question Text" class="w-full p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                        <div id="mcq-options" class="grid grid-cols-2 gap-2">
+                            <input type="text" id="opt-a" placeholder="Opt A" class="p-3 border rounded-2xl outline-none text-sm w-full bg-slate-50">
+                            <input type="text" id="opt-b" placeholder="Opt B" class="p-3 border rounded-2xl outline-none text-sm w-full bg-slate-50">
+                            <input type="text" id="opt-c" placeholder="Opt C" class="p-3 border rounded-2xl outline-none text-sm w-full bg-slate-50">
+                            <input type="text" id="opt-d" placeholder="Opt D" class="p-3 border rounded-2xl outline-none text-sm w-full bg-slate-50">
+                        </div>
+                        <div id="ans-mcq-wrapper">
+                            <select id="q-ans-mcq" class="w-full p-3 border rounded-2xl outline-none text-sm font-bold text-indigo-600 bg-indigo-50/50">
+                                <option value="">Select Correct Option</option>
+                                <option value="A">Option A</option><option value="B">Option B</option>
+                                <option value="C">Option C</option><option value="D">Option D</option>
+                            </select>
+                        </div>
+                        <div id="ans-typing-wrapper" class="hidden">
+                            <input type="text" id="q-ans-typing" placeholder="Exact Correct Answer" class="w-full p-3 border rounded-2xl outline-none text-sm font-bold text-indigo-600 bg-indigo-50/50">
+                        </div>
+                        <div class="flex items-center gap-3 bg-slate-50 p-3 border rounded-2xl">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Points:</label>
+                            <input type="number" id="q-pts" value="2" class="flex-1 bg-transparent outline-none font-black text-indigo-600">
+                        </div>
+                        <div class="flex gap-2 pt-2">
+                            <button id="submit-btn" onclick="saveQuestion()" class="flex-1 bg-slate-900 text-white py-3 rounded-2xl font-bold shadow-lg">Save Question</button>
+                            <button id="cancel-edit" onclick="resetForm()" class="hidden bg-slate-100 text-slate-600 px-4 rounded-2xl border">X</button>
+                        </div>
                     </div>
+                    <div id="q-list" class="mt-8 space-y-2 overflow-y-auto max-h-[400px] pr-2"></div>
+                </div>
 
-                    <div id="ans-typing-wrapper" class="hidden">
-                        <input type="text" id="q-ans-typing" placeholder="Exact Correct Answer" class="w-full p-3 border rounded-xl outline-none text-sm font-semibold text-indigo-600">
+                <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border overflow-hidden">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <h2 class="font-black text-lg text-slate-800">Global Leaderboard</h2>
+                        <div class="flex gap-2">
+                            <button onclick="clearAllSubmissions()" class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-xs font-bold border border-red-100">Clear Data</button>
+                            <button onclick="downloadCSV()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:bg-emerald-700 transition">Export CSV</button>
+                        </div>
                     </div>
-
-                    <div class="flex items-center gap-3 bg-slate-50 p-3 border rounded-xl">
-                        <label for="q-pts" class="text-xs font-bold text-slate-400 uppercase tracking-wider">Points:</label>
-                        <input type="number" id="q-pts" value="2" class="flex-1 bg-transparent outline-none font-bold text-indigo-600">
-                    </div>
-                    
-                    <div class="flex gap-2">
-                        <button id="submit-btn" onclick="saveQuestion()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-md">Save</button>
-                        <button id="cancel-edit" onclick="resetForm()" class="hidden bg-slate-100 text-slate-600 px-4 rounded-xl border">X</button>
+                    <div class="overflow-x-auto rounded-2xl border border-slate-100">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50 text-[10px] uppercase font-black text-slate-400">
+                                <tr>
+                                    <th class="p-4">Rank</th>
+                                    <th class="p-4">Student Info</th>
+                                    <th class="p-4 text-center">Score</th>
+                                    <th class="p-4">Time</th>
+                                    <th class="p-4 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-body" class="text-sm divide-y"></tbody>
+                        </table>
                     </div>
                 </div>
-                <div id="q-list" class="mt-8 space-y-2 overflow-y-auto max-h-[400px]"></div>
             </div>
-
-            <div class="lg:col-span-2 bg-slate-900 p-4 md:p-6 rounded-3xl shadow-2xl border-t-4 border-indigo-500">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                    <h2 class="font-black text-lg md:text-xl text-white tracking-tight">Leaderboard</h2>
-                    <div class="flex gap-2 w-full sm:w-auto">
-                        <button onclick="clearAllSubmissions()" class="flex-1 sm:flex-none bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-lg">Clear All</button>
-                        <button onclick="downloadCSV()" class="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-lg">Export CSV</button>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left min-w-[500px]">
-                        <thead class="bg-slate-800/50 border-b border-slate-700 text-[10px] uppercase font-bold text-slate-400">
-                            <tr>
-                                <th class="p-4">User ID</th>
-                                <th class="p-4">Name</th>
-                                <th class="p-4">Score</th>
-                                <th class="p-4">Time</th>
-                                <th class="p-4">Manage</th>
-                            </tr>
-                        </thead>
-                        <tbody id="leaderboard-body" class="text-sm"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        </main>
     </div>
 
     <script>
+        // CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyAnG3Hk8AfZoG0fcI6QMwRLReUNcEFLcz8",
             authDomain: "cwseunnati.firebaseapp.com",
@@ -162,13 +189,24 @@
         const adminEmails = ["maddula_m241070ee@nitc.ac.in", "sbuvana@nitc.ac.in", "vrindavarma@nitc.ac.in", "manju@nitc.ac.in"];
         let submissionUnsubscribe = null;
 
+        // Populate Dropdowns
+        function populateTimeDropdowns() {
+            const hhs = [document.getElementById('start-hh'), document.getElementById('end-hh')];
+            const mms = [document.getElementById('start-mm'), document.getElementById('end-mm')];
+            
+            hhs.forEach(sel => {
+                for(let i=1; i<=12; i++) sel.add(new Option(i < 10 ? '0'+i : i, i));
+            });
+            mms.forEach(sel => {
+                for(let i=0; i<60; i+=5) sel.add(new Option(i < 10 ? '0'+i : i, i < 10 ? '0'+i : i));
+            });
+        }
+        populateTimeDropdowns();
+
         auth.onAuthStateChanged(user => {
             document.getElementById('loading-screen').classList.add('hidden');
-            if (user && adminEmails.includes(user.email)) {
-                showDashboard();
-            } else {
-                showLogin();
-            }
+            if (user && adminEmails.includes(user.email)) showDashboard();
+            else showLogin();
         });
 
         function login() {
@@ -190,74 +228,35 @@
             document.getElementById('dashboard').classList.add('hidden');
         }
 
-        function handleTypeChange() {
-            const type = document.getElementById('q-type').value;
-            document.getElementById('mcq-options').classList.toggle('hidden', type === 'typing');
-            document.getElementById('ans-mcq-wrapper').classList.toggle('hidden', type === 'typing');
-            document.getElementById('ans-typing-wrapper').classList.toggle('hidden', type === 'mcq');
-        }
+        // SETTINGS SYNC
+        async function updateSettings() {
+            const sDate = document.getElementById('start-date').value;
+            const sHH = document.getElementById('start-hh').value;
+            const sMM = document.getElementById('start-mm').value;
+            const sAP = document.getElementById('start-ap').value;
 
-        async function saveQuestion() {
-            const id = document.getElementById('edit-id').value;
-            const type = document.getElementById('q-type').value;
-            const text = document.getElementById('q-text').value;
-            const pts = parseInt(document.getElementById('q-pts').value) || 2;
-            let data = { text, type, points: pts };
+            const eDate = document.getElementById('end-date').value;
+            const eHH = document.getElementById('end-hh').value;
+            const eMM = document.getElementById('end-mm').value;
+            const eAP = document.getElementById('end-ap').value;
 
-            if(type === 'mcq') {
-                const opts = [
-                    document.getElementById('opt-a').value,
-                    document.getElementById('opt-b').value,
-                    document.getElementById('opt-c').value,
-                    document.getElementById('opt-d').value
-                ];
-                const ansKey = document.getElementById('q-ans-mcq').value;
-                if(!text || !opts[0] || !ansKey) return alert("Missing MCQ data!");
-                data.options = opts;
-                data.correct = opts[ansKey === 'A' ? 0 : (ansKey === 'B' ? 1 : (ansKey === 'C' ? 2 : 3))];
-            } else {
-                const ans = document.getElementById('q-ans-typing').value;
-                if(!text || !ans) return alert("Please enter the correct answer!");
-                data.correct = ans;
-                data.options = [];
-            }
+            if(!sDate || !eDate) return alert("Please pick both dates!");
 
-            if(id) await db.collection('questions').doc(id).update(data);
-            else await db.collection('questions').add(data);
-            resetForm();
-        }
+            // Format for machine reading (ISO style strings)
+            const formatTime = (d, h, m, ap) => {
+                let hh = parseInt(h);
+                if(ap === "PM" && hh < 12) hh += 12;
+                if(ap === "AM" && hh === 12) hh = 0;
+                return `${d}T${hh < 10 ? '0'+hh : hh}:${m}:00`;
+            };
 
-        function editQuestion(id, data) {
-            document.getElementById('edit-id').value = id;
-            document.getElementById('q-text').value = data.text;
-            document.getElementById('q-type').value = data.type || 'mcq';
-            document.getElementById('q-pts').value = data.points;
-            handleTypeChange();
-            if(data.type === 'typing') {
-                document.getElementById('q-ans-typing').value = data.correct;
-            } else {
-                document.getElementById('opt-a').value = data.options[0];
-                document.getElementById('opt-b').value = data.options[1];
-                document.getElementById('opt-c').value = data.options[2];
-                document.getElementById('opt-d').value = data.options[3];
-                const idx = data.options.indexOf(data.correct);
-                document.getElementById('q-ans-mcq').value = idx === 0 ? 'A' : (idx === 1 ? 'B' : (idx === 2 ? 'C' : 'D'));
-            }
-            document.getElementById('cancel-edit').classList.remove('hidden');
-            document.getElementById('submit-btn').innerText = "Update";
-        }
-
-        function resetForm() {
-            document.getElementById('edit-id').value = "";
-            document.getElementById('q-text').value = "";
-            document.getElementById('q-ans-typing').value = "";
-            document.getElementById('opt-a').value = ""; document.getElementById('opt-b').value = "";
-            document.getElementById('opt-c').value = ""; document.getElementById('opt-d').value = "";
-            document.getElementById('q-ans-mcq').value = "";
-            document.getElementById('q-pts').value = "2";
-            document.getElementById('cancel-edit').classList.add('hidden');
-            document.getElementById('submit-btn').innerText = "Save";
-            handleTypeChange();
+            await db.collection('settings').doc('quizStatus').update({ 
+                duration: parseInt(document.getElementById('quiz-duration-input').value) || 10,
+                questionLimit: parseInt(document.getElementById('quiz-limit-input').value) || 0,
+                startTime: formatTime(sDate, sHH, sMM, sAP),
+                endTime: formatTime(eDate, eHH, eMM, eAP)
+            });
+            alert("Settings synchronized with live quiz!");
         }
 
         function setupLiveListeners() {
@@ -266,12 +265,26 @@
                 const d = doc.data();
                 const btn = document.getElementById('toggle-btn');
                 btn.innerText = d.active ? "ACTIVE" : "OFFLINE";
-                btn.className = d.active ? "text-xs font-black px-6 py-2 rounded-full bg-emerald-500 text-white shadow-lg" : "text-xs font-black px-6 py-2 rounded-full bg-red-500 text-white";
+                btn.className = d.active ? "text-[10px] font-black px-4 py-1.5 rounded-full bg-emerald-500 text-white shadow-lg" : "text-[10px] font-black px-4 py-1.5 rounded-full bg-red-500 text-white shadow-sm";
                 
                 document.getElementById('quiz-duration-input').value = d.duration || 10;
                 document.getElementById('quiz-limit-input').value = d.questionLimit || 0;
-                if(d.startTime) document.getElementById('quiz-start-time').value = d.startTime;
-                if(d.endTime) document.getElementById('quiz-end-time').value = d.endTime;
+
+                // Load existing times into manual pickers
+                const parseTime = (str, dateId, hhId, mmId, apId) => {
+                    if(!str) return;
+                    const [date, fullTime] = str.split('T');
+                    document.getElementById(dateId).value = date;
+                    let [hh, mm] = fullTime.split(':');
+                    hh = parseInt(hh);
+                    const ap = hh >= 12 ? "PM" : "AM";
+                    let hDisplay = hh % 12 || 12;
+                    document.getElementById(hhId).value = hDisplay;
+                    document.getElementById(mmId).value = mm;
+                    document.getElementById(apId).value = ap;
+                };
+                parseTime(d.startTime, 'start-date', 'start-hh', 'start-mm', 'start-ap');
+                parseTime(d.endTime, 'end-date', 'end-hh', 'end-mm', 'end-ap');
             });
 
             if(submissionUnsubscribe) submissionUnsubscribe();
@@ -279,17 +292,20 @@
                 document.getElementById('total-submissions-count').innerText = snap.size;
                 const body = document.getElementById('leaderboard-body');
                 body.innerHTML = '';
+                let rank = 1;
                 snap.forEach(doc => {
                     const s = doc.data();
-                    // FORMATTED TO 12-HOUR AM/PM
                     const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit', hour12: true}) : '...';
                     body.innerHTML += `
-                        <tr class="border-b border-slate-800 hover:bg-slate-800/30 transition">
-                            <td class="p-4 font-mono text-indigo-400">${s.rollNo}</td>
-                            <td class="p-4 font-bold text-white">${s.name}</td>
-                            <td class="p-4 text-emerald-400 font-black text-lg">${s.score}</td>
-                            <td class="p-4 text-slate-500 text-xs">${timeStr}</td>
-                            <td class="p-4"><button onclick="deleteEntry('${doc.id}')" class="text-red-500 hover:text-red-300 font-bold text-[10px] uppercase">Clear</button></td>
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="p-4 font-black text-slate-300 text-xl">#${rank++}</td>
+                            <td class="p-4">
+                                <p class="font-bold text-slate-800">${s.name}</p>
+                                <p class="text-[10px] text-indigo-500 font-mono font-bold">${s.rollNo}</p>
+                            </td>
+                            <td class="p-4 text-center"><span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg font-black">${s.score}</span></td>
+                            <td class="p-4 text-slate-400 text-[10px] font-bold uppercase">${timeStr}</td>
+                            <td class="p-4 text-right"><button onclick="deleteEntry('${doc.id}')" class="text-red-400 hover:text-red-600 font-bold text-[10px] uppercase">Remove</button></td>
                         </tr>`;
                 });
             });
@@ -303,8 +319,8 @@
                     const q = doc.data();
                     totalPts += (parseInt(q.points) || 0);
                     const div = document.createElement('div');
-                    div.className = "p-3 bg-slate-50 border rounded-xl flex justify-between items-center text-xs gap-4";
-                    div.innerHTML = `<span class="flex-1 font-bold"><span class="text-slate-400 mr-2">${qIndex}.</span>${q.text} <span class="text-indigo-400">(${q.points}p)</span></span><div class="flex gap-2 flex-shrink-0"><button onclick='editQuestion("${doc.id}", ${JSON.stringify(q)})' class="text-indigo-600 font-bold">Edit</button><button onclick='deleteQ("${doc.id}")' class="text-red-500 font-bold">X</button></div>`;
+                    div.className = "p-3 bg-slate-50 border border-slate-100 rounded-2xl flex justify-between items-center text-[11px] gap-4 mb-2 hover:border-indigo-200 transition";
+                    div.innerHTML = `<span class="flex-1 font-bold text-slate-700"><span class="text-indigo-400 mr-2">#${qIndex}</span>${q.text}</span><div class="flex gap-2 flex-shrink-0"><button onclick='editQuestion("${doc.id}", ${JSON.stringify(q)})' class="text-indigo-600 font-black">EDIT</button><button onclick='deleteQ("${doc.id}")' class="text-red-500 font-black">X</button></div>`;
                     list.appendChild(div);
                     qIndex++;
                 });
@@ -312,72 +328,80 @@
             });
         }
 
+        // OTHER UTILS (Keep your existing toggleQuiz, deleteQ, saveQuestion logic)
         async function toggleQuiz() {
             const btn = document.getElementById('toggle-btn');
             await db.collection('settings').doc('quizStatus').update({ active: btn.innerText === "OFFLINE" });
         }
-
-        async function updateSettings() {
-            const mins = document.getElementById('quiz-duration-input').value;
-            const limit = document.getElementById('quiz-limit-input').value;
-            const startTime = document.getElementById('quiz-start-time').value;
-            const endTime = document.getElementById('quiz-end-time').value;
-
-            if(!startTime || !endTime) return alert("Please set both Start and End times!");
-
-            await db.collection('settings').doc('quizStatus').update({ 
-                duration: parseInt(mins), 
-                questionLimit: parseInt(limit) || 0,
-                startTime: startTime,
-                endTime: endTime
-            });
-            alert("Settings updated! The student page will now follow this window.");
+        function handleTypeChange() {
+            const type = document.getElementById('q-type').value;
+            document.getElementById('mcq-options').classList.toggle('hidden', type === 'typing');
+            document.getElementById('ans-mcq-wrapper').classList.toggle('hidden', type === 'typing');
+            document.getElementById('ans-typing-wrapper').classList.toggle('hidden', type === 'mcq');
         }
+        async function saveQuestion() {
+            const id = document.getElementById('edit-id').value;
+            const type = document.getElementById('q-type').value;
+            const text = document.getElementById('q-text').value;
+            const pts = parseInt(document.getElementById('q-pts').value) || 2;
+            let data = { text, type, points: pts };
 
+            if(type === 'mcq') {
+                const opts = [document.getElementById('opt-a').value, document.getElementById('opt-b').value, document.getElementById('opt-c').value, document.getElementById('opt-d').value];
+                const ansKey = document.getElementById('q-ans-mcq').value;
+                if(!text || !opts[0] || !ansKey) return alert("Missing data!");
+                data.options = opts;
+                data.correct = opts[ansKey === 'A' ? 0 : (ansKey === 'B' ? 1 : (ansKey === 'C' ? 2 : 3))];
+            } else {
+                const ans = document.getElementById('q-ans-typing').value;
+                if(!text || !ans) return alert("Enter correct answer!");
+                data.correct = ans;
+                data.options = [];
+            }
+            if(id) await db.collection('questions').doc(id).update(data);
+            else await db.collection('questions').add(data);
+            resetForm();
+        }
+        function resetForm() {
+            document.getElementById('edit-id').value = ""; document.getElementById('q-text').value = "";
+            document.getElementById('q-ans-typing').value = ""; document.getElementById('opt-a').value = "";
+            document.getElementById('opt-b').value = ""; document.getElementById('opt-c').value = "";
+            document.getElementById('opt-d').value = ""; document.getElementById('q-ans-mcq').value = "";
+            document.getElementById('q-pts').value = "2"; document.getElementById('cancel-edit').classList.add('hidden');
+            document.getElementById('submit-btn').innerText = "Save Question";
+        }
         async function deleteQ(id) { if(confirm("Delete?")) await db.collection('questions').doc(id).delete(); }
         async function deleteEntry(id) { if(confirm("Clear?")) await db.collection('submissions').doc(id).delete(); }
-
         async function clearAllSubmissions() {
             if(confirm("DELETE ALL student responses?")) {
                 const snap = await db.collection('submissions').get();
-                const batch = db.batch();
-                snap.forEach(doc => batch.delete(doc.ref));
-                await batch.commit();
+                const batch = db.batch(); snap.forEach(doc => batch.delete(doc.ref)); await batch.commit();
             }
         }
-
         async function downloadCSV() {
             const snap = await db.collection('submissions').orderBy('score', 'desc').orderBy('timestamp', 'asc').get();
-            let csv = "Rank,Name,RollNo,Score,SubmittedAt\n";
-            let rank = 1;
+            let csv = "Rank,Name,RollNo,Score,Time\n"; let r = 1;
             snap.forEach(doc => {
-                const s = doc.data();
-                // 12-HOUR FORMAT FOR CSV
-                const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleString('en-IN', {hour12: true}).replace(',', '') : 'N/A';
-                csv += `${rank++},"${s.name}","${s.rollNo}",${s.score},"${timeStr}"\n`;
+                const s = doc.data(); const ts = s.timestamp ? s.timestamp.toDate().toLocaleString('en-IN').replace(',','') : 'N/A';
+                csv += `${r++},"${s.name}","${s.rollNo}",${s.score},"${ts}"\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = 'Quiz_Results.csv'; a.click();
         }
-
         async function downloadQuestionsPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            const { jsPDF } = window.jspdf; const doc = new jsPDF();
             const snap = await db.collection('questions').get();
-            doc.setFontSize(18);
-            doc.text("CWSE Quiz - Question Bank", 14, 20);
-            const tableData = [];
-            let i = 1;
+            doc.setFontSize(18); doc.text("CWSE Question Bank", 14, 20);
+            const tableData = []; let i = 1;
             snap.forEach(qDoc => {
                 const q = qDoc.data();
-                const typeInfo = q.type === 'typing' ? '[Short Answer]' : `A: ${q.options[0]}\nB: ${q.options[1]}\nC: ${q.options[2]}\nD: ${q.options[3]}`;
+                const typeInfo = q.type === 'typing' ? '[Typing]' : `A: ${q.options[0]} B: ${q.options[1]} C: ${q.options[2]} D: ${q.options[3]}`;
                 tableData.push([i++, q.text, typeInfo, q.correct, q.points]);
             });
-            doc.autoTable({ startY: 30, head: [['#', 'Question', 'Options/Type', 'Ans', 'Pts']], body: tableData, theme: 'striped', headStyles: { fillColor: [79, 70, 229] } });
-            doc.save('Quiz_Question_Bank.pdf');
+            doc.autoTable({ startY: 30, head: [['#', 'Question', 'Options', 'Ans', 'Pts']], body: tableData });
+            doc.save('Question_Bank.pdf');
         }
-
         function logout() { auth.signOut(); }
     </script>
 </body>
