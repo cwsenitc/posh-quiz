@@ -26,18 +26,24 @@
         </div>
 
         <div class="space-y-4">
-            <input type="text" id="userName" placeholder="Full Name" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-            <input type="text" id="rollNo" placeholder="Staff ID (e.g. xyz)" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-            <input type="email" id="userEmail" placeholder="Email ID" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="text" id="userName" placeholder="Full Name" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+            <input type="text" id="rollNo" placeholder="Staff ID (e.g. xyz)" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+            <input type="email" id="userEmail" placeholder="Email ID" class="w-full p-4 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
             
             <div id="status-box" class="pt-4 text-center">
                 <div id="time-status-msg" class="mb-4 p-3 rounded-xl text-sm font-bold hidden"></div>
 
-                <div id="wait-msg" class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 font-medium">
-                    <span class="animate-pulse">🤔</span> Checking quiz schedule...
+                <div id="wait-msg" class="text-left bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Instructions</h3>
+                    <ul class="text-xs text-slate-600 space-y-1.5 list-disc ml-4">
+                        <li>Ensure you have a stable internet connection.</li>
+                        <li>Do not refresh the page once the quiz starts.</li>
+                        <li>The quiz will auto-submit when the timer hits zero.</li>
+                        <li>The quiz does not have an option to go back to the previous question.</li>
+                    </ul>
                 </div>
                 
-                <button id="start-btn" onclick="startQuiz()" class="hidden w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition">
+                <button id="start-btn" onclick="startQuiz()" class="hidden w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-[1.02] active:scale-[0.98]">
                     Start Quiz (<span id="set-time-display">10</span> Mins)
                 </button>
             </div>
@@ -102,7 +108,6 @@
             }
         };
 
-        // Listen for both Manual Toggle and Scheduled Times
         db.collection('settings').doc('quizStatus').onSnapshot(doc => {
             if(!doc.exists || localStorage.getItem("cwse_quiz_submitted") === "true") return;
             const d = doc.data();
@@ -115,33 +120,35 @@
                 const endTime = d.endTime ? new Date(d.endTime).getTime() : 0;
                 
                 const btn = document.getElementById('start-btn');
-                const msg = document.getElementById('wait-msg');
                 const timeStatus = document.getElementById('time-status-msg');
+                const waitMsg = document.getElementById('wait-msg');
 
                 questionLimit = d.questionLimit || 0;
 
                 // Scenario 1: Quiz is manually OFF or time hasn't reached yet
                 if (!d.active || (startTime && now < startTime)) {
                     btn.classList.add('hidden');
-                    msg.classList.remove('hidden');
                     timeStatus.classList.remove('hidden');
                     timeStatus.className = "mb-4 p-3 rounded-xl text-sm font-bold bg-amber-100 text-amber-700";
-                    timeStatus.innerText = startTime ? `Starts at: ${new Date(startTime).toLocaleString()}` : "Not accepting responses";
+                    
+                    // Formatting to 12-hour IST style
+                    const timeOpts = { hour: '2-digit', minute: '2-digit', hour12: true };
+                    const startStr = startTime ? new Date(startTime).toLocaleTimeString([], timeOpts) : "";
+                    
+                    timeStatus.innerText = startTime ? `Scheduled to start at ${startStr}` : "Quiz is currently offline";
                     if(isQuizActiveInUI) submitFinal();
                 } 
                 // Scenario 2: Time has passed
                 else if (endTime && now > endTime) {
                     btn.classList.add('hidden');
-                    msg.classList.remove('hidden');
                     timeStatus.classList.remove('hidden');
                     timeStatus.className = "mb-4 p-3 rounded-xl text-sm font-bold bg-red-100 text-red-700";
-                    timeStatus.innerText = "Quiz has ended.";
-                    if(isQuizActiveInUI) submitFinal(); // Auto-submit if time runs out mid-quiz
+                    timeStatus.innerText = "The quiz session has ended.";
+                    if(isQuizActiveInUI) submitFinal(); 
                 }
                 // Scenario 3: Quiz is ACTIVE and within time window
                 else {
                     btn.classList.remove('hidden');
-                    msg.classList.add('hidden');
                     timeStatus.classList.add('hidden');
                     document.getElementById('set-time-display').innerText = d.duration || 10;
                     if(timeLeft === 0) timeLeft = (d.duration || 10) * 60;
@@ -153,7 +160,8 @@
             const name = document.getElementById('userName').value, 
                   roll = document.getElementById('rollNo').value,
                   email = document.getElementById('userEmail').value;
-            if(!name || !roll || !email) return alert("Please fill all fields.");
+            
+            if(!name || !roll || !email) return alert("Please fill all identity fields.");
 
             const qSnap = await db.collection('questions').get();
             questions = qSnap.docs.map(doc => ({id: doc.id, ...doc.data()}));
@@ -190,7 +198,7 @@
                 mcqBox.innerHTML = '';
                 q.options.forEach(opt => {
                     const b = document.createElement('button');
-                    b.className = "w-full text-left p-4 border-2 border-slate-100 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition font-semibold text-slate-700";
+                    b.className = "w-full text-left p-4 border-2 border-slate-100 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition-all font-semibold text-slate-700 active:scale-[0.99]";
                     b.innerText = opt;
                     b.onclick = () => { recordAnswer(opt); nextStep(); };
                     mcqBox.appendChild(b);
@@ -245,7 +253,7 @@
                 showThankYou(totalScore);
             } catch (e) { 
                 console.error(e);
-                alert("Submission failed. Your score: " + totalScore); 
+                alert("Database error. Your local score is: " + totalScore); 
             }
         }
 
