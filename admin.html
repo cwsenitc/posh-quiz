@@ -34,11 +34,11 @@
                 
                 <div class="flex flex-wrap items-center gap-3 border-l pl-4">
                     <div class="flex flex-col">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">Start Time (IST)</span>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Start (IST)</span>
                         <input type="datetime-local" id="quiz-start-time" class="p-1 border rounded font-bold text-indigo-600 text-xs">
                     </div>
                     <div class="flex flex-col">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">End Time (IST)</span>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">End (IST)</span>
                         <input type="datetime-local" id="quiz-end-time" class="p-1 border rounded font-bold text-indigo-600 text-xs">
                     </div>
                     <div class="flex flex-col">
@@ -49,7 +49,7 @@
                         <span class="text-[10px] font-bold text-slate-400 uppercase">Limit</span>
                         <input type="number" id="quiz-limit-input" class="w-14 p-1 text-center border rounded font-bold text-indigo-600 text-xs">
                     </div>
-                    <button onclick="updateSettings()" class="bg-indigo-600 text-white px-4 py-2 mt-3 rounded-lg text-[10px] font-bold shadow-md hover:bg-indigo-700">UPDATE ALL</button>
+                    <button onclick="updateSettings()" class="bg-indigo-600 text-white px-4 py-2 mt-3 rounded-lg text-[10px] font-bold shadow-md hover:bg-indigo-700 transition">UPDATE ALL</button>
                 </div>
             </div>
 
@@ -202,7 +202,6 @@
             const type = document.getElementById('q-type').value;
             const text = document.getElementById('q-text').value;
             const pts = parseInt(document.getElementById('q-pts').value) || 2;
-            
             let data = { text, type, points: pts };
 
             if(type === 'mcq') {
@@ -233,9 +232,7 @@
             document.getElementById('q-text').value = data.text;
             document.getElementById('q-type').value = data.type || 'mcq';
             document.getElementById('q-pts').value = data.points;
-            
             handleTypeChange();
-
             if(data.type === 'typing') {
                 document.getElementById('q-ans-typing').value = data.correct;
             } else {
@@ -246,7 +243,6 @@
                 const idx = data.options.indexOf(data.correct);
                 document.getElementById('q-ans-mcq').value = idx === 0 ? 'A' : (idx === 1 ? 'B' : (idx === 2 ? 'C' : 'D'));
             }
-
             document.getElementById('cancel-edit').classList.remove('hidden');
             document.getElementById('submit-btn').innerText = "Update";
         }
@@ -274,8 +270,6 @@
                 
                 document.getElementById('quiz-duration-input').value = d.duration || 10;
                 document.getElementById('quiz-limit-input').value = d.questionLimit || 0;
-                
-                // NEW: Load the Start and End times
                 if(d.startTime) document.getElementById('quiz-start-time').value = d.startTime;
                 if(d.endTime) document.getElementById('quiz-end-time').value = d.endTime;
             });
@@ -287,7 +281,8 @@
                 body.innerHTML = '';
                 snap.forEach(doc => {
                     const s = doc.data();
-                    const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) : '...';
+                    // FORMATTED TO 12-HOUR AM/PM
+                    const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit', hour12: true}) : '...';
                     body.innerHTML += `
                         <tr class="border-b border-slate-800 hover:bg-slate-800/30 transition">
                             <td class="p-4 font-mono text-indigo-400">${s.rollNo}</td>
@@ -336,7 +331,7 @@
                 startTime: startTime,
                 endTime: endTime
             });
-            alert("All settings and timings updated successfully!");
+            alert("Settings updated! The student page will now follow this window.");
         }
 
         async function deleteQ(id) { if(confirm("Delete?")) await db.collection('questions').doc(id).delete(); }
@@ -353,12 +348,13 @@
 
         async function downloadCSV() {
             const snap = await db.collection('submissions').orderBy('score', 'desc').orderBy('timestamp', 'asc').get();
-            let csv = "Rank,Name,RollNo,Email,Score,SubmittedAt\n";
+            let csv = "Rank,Name,RollNo,Score,SubmittedAt\n";
             let rank = 1;
             snap.forEach(doc => {
                 const s = doc.data();
-                const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleString('en-GB').replace(',', '') : 'N/A';
-                csv += `${rank++},"${s.name}","${s.rollNo}","${s.email || 'N/A'}",${s.score},"${timeStr}"\n`;
+                // 12-HOUR FORMAT FOR CSV
+                const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleString('en-IN', {hour12: true}).replace(',', '') : 'N/A';
+                csv += `${rank++},"${s.name}","${s.rollNo}",${s.score},"${timeStr}"\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
