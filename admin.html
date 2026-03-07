@@ -139,7 +139,7 @@
                         </div>
                         <div class="flex gap-2 pt-2">
                             <button id="submit-btn" onclick="saveQuestion()" class="flex-1 bg-slate-900 text-white py-3 rounded-2xl font-bold shadow-lg">Save Question</button>
-                            <button id="cancel-edit" onclick="resetForm()" class="hidden bg-slate-100 text-slate-600 px-4 rounded-2xl border">X</button>
+                            <button id="cancel-edit" onclick="resetForm()" class="hidden bg-slate-100 text-slate-600 px-4 rounded-2xl border text-xl font-bold">×</button>
                         </div>
                     </div>
                     <div id="q-list" class="mt-8 space-y-2 overflow-y-auto max-h-[400px] pr-2"></div>
@@ -221,32 +221,11 @@
             document.getElementById('dashboard').classList.add('hidden');
         }
 
-        async function updateSettings() {
-            const sDate = document.getElementById('start-date').value;
-            const sHH = document.getElementById('start-hh').value;
-            const sMM = document.getElementById('start-mm').value;
-            const sAP = document.getElementById('start-ap').value;
-            const eDate = document.getElementById('end-date').value;
-            const eHH = document.getElementById('end-hh').value;
-            const eMM = document.getElementById('end-mm').value;
-            const eAP = document.getElementById('end-ap').value;
-
-            if(!sDate || !eDate) return alert("Please pick both dates!");
-
-            const formatTime = (d, h, m, ap) => {
-                let hh = parseInt(h);
-                if(ap === "PM" && hh < 12) hh += 12;
-                if(ap === "AM" && hh === 12) hh = 0;
-                return `${d}T${hh < 10 ? '0'+hh : hh}:${m}:00`;
-            };
-
-            await db.collection('settings').doc('quizStatus').update({ 
-                duration: parseInt(document.getElementById('quiz-duration-input').value) || 10,
-                questionLimit: parseInt(document.getElementById('quiz-limit-input').value) || 0,
-                startTime: formatTime(sDate, sHH, sMM, sAP),
-                endTime: formatTime(eDate, eHH, eMM, eAP)
-            });
-            alert("Settings synced!");
+        function handleTypeChange() {
+            const type = document.getElementById('q-type').value;
+            document.getElementById('mcq-options').classList.toggle('hidden', type === 'typing');
+            document.getElementById('ans-mcq-wrapper').classList.toggle('hidden', type === 'typing');
+            document.getElementById('ans-typing-wrapper').classList.toggle('hidden', type === 'mcq');
         }
 
         function editQuestion(id, data) {
@@ -254,20 +233,17 @@
             document.getElementById('q-text').value = data.text;
             document.getElementById('q-type').value = data.type || 'mcq';
             document.getElementById('q-pts').value = data.points;
-            
             handleTypeChange();
-
-            if(data.type === 'mcq') {
-                document.getElementById('opt-a').value = data.options[0];
-                document.getElementById('opt-b').value = data.options[1];
-                document.getElementById('opt-c').value = data.options[2];
-                document.getElementById('opt-d').value = data.options[3];
+            if (data.type === 'mcq') {
+                document.getElementById('opt-a').value = data.options[0] || '';
+                document.getElementById('opt-b').value = data.options[1] || '';
+                document.getElementById('opt-c').value = data.options[2] || '';
+                document.getElementById('opt-d').value = data.options[3] || '';
                 const idx = data.options.indexOf(data.correct);
-                document.getElementById('q-ans-mcq').value = idx === 0 ? 'A' : (idx === 1 ? 'B' : (idx === 2 ? 'C' : 'D'));
+                document.getElementById('q-ans-mcq').value = idx === 0 ? 'A' : (idx === 1 ? 'B' : (idx === 2 ? 'C' : (idx === 3 ? 'D' : '')));
             } else {
                 document.getElementById('q-ans-typing').value = data.correct;
             }
-
             document.getElementById('form-title').innerText = "Edit Question";
             document.getElementById('submit-btn').innerText = "Update Question";
             document.getElementById('cancel-edit').classList.remove('hidden');
@@ -292,17 +268,21 @@
             const type = document.getElementById('q-type').value;
             const text = document.getElementById('q-text').value;
             const pts = parseInt(document.getElementById('q-pts').value) || 2;
-            let data = { text, type, points: pts };
+            if(!text) return alert("Question text is required");
 
+            let data = { text, type, points: pts };
             if(type === 'mcq') {
-                const opts = [document.getElementById('opt-a').value, document.getElementById('opt-b').value, document.getElementById('opt-c').value, document.getElementById('opt-d').value];
+                const opts = [
+                    document.getElementById('opt-a').value, document.getElementById('opt-b').value,
+                    document.getElementById('opt-c').value, document.getElementById('opt-d').value
+                ];
                 const ansKey = document.getElementById('q-ans-mcq').value;
-                if(!text || !opts[0] || !ansKey) return alert("Missing data!");
+                if(!opts[0] || !ansKey) return alert("Missing MCQ options or answer!");
                 data.options = opts;
                 data.correct = opts[ansKey === 'A' ? 0 : (ansKey === 'B' ? 1 : (ansKey === 'C' ? 2 : 3))];
             } else {
                 const ans = document.getElementById('q-ans-typing').value;
-                if(!text || !ans) return alert("Enter correct answer!");
+                if(!ans) return alert("Enter correct answer!");
                 data.correct = ans;
                 data.options = [];
             }
@@ -312,11 +292,29 @@
             resetForm();
         }
 
-        function handleTypeChange() {
-            const type = document.getElementById('q-type').value;
-            document.getElementById('mcq-options').classList.toggle('hidden', type === 'typing');
-            document.getElementById('ans-mcq-wrapper').classList.toggle('hidden', type === 'typing');
-            document.getElementById('ans-typing-wrapper').classList.toggle('hidden', type === 'mcq');
+        async function updateSettings() {
+            const sDate = document.getElementById('start-date').value;
+            const sHH = document.getElementById('start-hh').value;
+            const sMM = document.getElementById('start-mm').value;
+            const sAP = document.getElementById('start-ap').value;
+            const eDate = document.getElementById('end-date').value;
+            const eHH = document.getElementById('end-hh').value;
+            const eMM = document.getElementById('end-mm').value;
+            const eAP = document.getElementById('end-ap').value;
+            if(!sDate || !eDate) return alert("Please pick both dates!");
+            const formatTime = (d, h, m, ap) => {
+                let hh = parseInt(h);
+                if(ap === "PM" && hh < 12) hh += 12;
+                if(ap === "AM" && hh === 12) hh = 0;
+                return `${d}T${hh < 10 ? '0'+hh : hh}:${m}:00`;
+            };
+            await db.collection('settings').doc('quizStatus').update({ 
+                duration: parseInt(document.getElementById('quiz-duration-input').value) || 10,
+                questionLimit: parseInt(document.getElementById('quiz-limit-input').value) || 0,
+                startTime: formatTime(sDate, sHH, sMM, sAP),
+                endTime: formatTime(eDate, eHH, eMM, eAP)
+            });
+            alert("Settings synchronized!");
         }
 
         function setupLiveListeners() {
@@ -325,12 +323,26 @@
                 const d = doc.data();
                 const btn = document.getElementById('toggle-btn');
                 btn.innerText = d.active ? "ACTIVE" : "OFFLINE";
-                btn.className = d.active ? "text-[10px] font-black px-4 py-1.5 rounded-full bg-emerald-500 text-white shadow-lg" : "text-[10px] font-black px-4 py-1.5 rounded-full bg-red-500 text-white";
+                btn.className = d.active ? "text-[10px] font-black px-4 py-1.5 rounded-full bg-emerald-500 text-white shadow-lg" : "text-[10px] font-black px-4 py-1.5 rounded-full bg-red-500 text-white shadow-sm";
                 document.getElementById('quiz-duration-input').value = d.duration || 10;
                 document.getElementById('quiz-limit-input').value = d.questionLimit || 0;
+                const parseTime = (str, dateId, hhId, mmId, apId) => {
+                    if(!str) return;
+                    const [date, fullTime] = str.split('T');
+                    document.getElementById(dateId).value = date;
+                    let [hh, mm] = fullTime.split(':');
+                    hh = parseInt(hh);
+                    const ap = hh >= 12 ? "PM" : "AM";
+                    let hDisplay = hh % 12 || 12;
+                    document.getElementById(hhId).value = hDisplay;
+                    document.getElementById(mmId).value = mm;
+                    document.getElementById(apId).value = ap;
+                };
+                parseTime(d.startTime, 'start-date', 'start-hh', 'start-mm', 'start-ap');
+                parseTime(d.endTime, 'end-date', 'end-hh', 'end-mm', 'end-ap');
             });
 
-            submissionUnsubscribe = db.collection('submissions').orderBy('score', 'desc').orderBy('timestamp', 'asc').onSnapshot(snap => {
+            db.collection('submissions').orderBy('score', 'desc').orderBy('timestamp', 'asc').onSnapshot(snap => {
                 document.getElementById('total-submissions-count').innerText = snap.size;
                 const body = document.getElementById('leaderboard-body');
                 body.innerHTML = '';
@@ -338,14 +350,7 @@
                 snap.forEach(doc => {
                     const s = doc.data();
                     const timeStr = s.timestamp ? s.timestamp.toDate().toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit', hour12: true}) : '...';
-                    body.innerHTML += `
-                        <tr class="hover:bg-slate-50 transition">
-                            <td class="p-4 font-black text-slate-300 text-xl">#${rank++}</td>
-                            <td class="p-4"><p class="font-bold text-slate-800">${s.name}</p><p class="text-[10px] text-indigo-500 font-mono font-bold">${s.rollNo}</p></td>
-                            <td class="p-4 text-center"><span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg font-black">${s.score}</span></td>
-                            <td class="p-4 text-slate-400 text-[10px] font-bold uppercase">${timeStr}</td>
-                            <td class="p-4 text-right"><button onclick="deleteEntry('${doc.id}')" class="text-red-400 hover:text-red-600 font-bold text-[10px] uppercase">Remove</button></td>
-                        </tr>`;
+                    body.innerHTML += `<tr class="hover:bg-slate-50 transition"><td class="p-4 font-black text-slate-300 text-xl">#${rank++}</td><td class="p-4"><p class="font-bold text-slate-800">${s.name}</p><p class="text-[10px] text-indigo-500 font-mono font-bold">${s.rollNo}</p></td><td class="p-4 text-center"><span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg font-black">${s.score}</span></td><td class="p-4 text-slate-400 text-[10px] font-bold uppercase">${timeStr}</td><td class="p-4 text-right"><button onclick="deleteEntry('${doc.id}')" class="text-red-400 hover:text-red-600 font-bold text-[10px] uppercase">Remove</button></td></tr>`;
                 });
             });
 
@@ -359,7 +364,9 @@
                     totalPts += (parseInt(q.points) || 0);
                     const div = document.createElement('div');
                     div.className = "p-3 bg-slate-50 border border-slate-100 rounded-2xl flex justify-between items-center text-[11px] gap-4 mb-2 hover:border-indigo-200 transition";
-                    div.innerHTML = `<span class="flex-1 font-bold text-slate-700"><span class="text-indigo-400 mr-2">#${qIndex}</span>${q.text}</span><div class="flex gap-2 flex-shrink-0"><button onclick='editQuestion("${doc.id}", ${JSON.stringify(q).replace(/'/g, "&apos;")})' class="text-indigo-600 font-black">EDIT</button><button onclick='deleteQ("${doc.id}")' class="text-red-500 font-black">X</button></div>`;
+                    // Using a custom escape for the JSON string to avoid breaking the onclick handler
+                    const escapedData = JSON.stringify(q).replace(/'/g, "\\'");
+                    div.innerHTML = `<span class="flex-1 font-bold text-slate-700"><span class="text-indigo-400 mr-2">#${qIndex}</span>${q.text}</span><div class="flex gap-2 flex-shrink-0"><button onclick='editQuestion("${doc.id}", ${escapedData})' class="text-indigo-600 font-black">EDIT</button><button onclick='deleteQ("${doc.id}")' class="text-red-500 font-black">X</button></div>`;
                     list.appendChild(div);
                     qIndex++;
                 });
@@ -371,16 +378,14 @@
             const btn = document.getElementById('toggle-btn');
             await db.collection('settings').doc('quizStatus').update({ active: btn.innerText === "OFFLINE" });
         }
-
-        async function deleteQ(id) { if(confirm("Delete?")) await db.collection('questions').doc(id).delete(); }
-        async function deleteEntry(id) { if(confirm("Clear?")) await db.collection('submissions').doc(id).delete(); }
+        async function deleteQ(id) { if(confirm("Delete Question?")) await db.collection('questions').doc(id).delete(); }
+        async function deleteEntry(id) { if(confirm("Clear entry?")) await db.collection('submissions').doc(id).delete(); }
         async function clearAllSubmissions() {
-            if(confirm("DELETE ALL?")) {
+            if(confirm("DELETE ALL responses?")) {
                 const snap = await db.collection('submissions').get();
                 const batch = db.batch(); snap.forEach(doc => batch.delete(doc.ref)); await batch.commit();
             }
         }
-
         async function downloadCSV() {
             const snap = await db.collection('submissions').orderBy('score', 'desc').orderBy('timestamp', 'asc').get();
             let csv = "Rank,Name,RollNo,Score,Time\n"; let r = 1;
@@ -397,37 +402,36 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const snap = await db.collection('questions').get();
-            
             doc.setFontSize(18);
             doc.setTextColor(30, 41, 59);
-            doc.text("CWSE Quiz - Question Bank", 14, 20);
+            doc.text("CWSE Question Bank", 14, 20);
             
-            doc.setFontSize(10);
-            doc.setTextColor(100);
-            doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 27);
-
             const tableData = [];
             let i = 1;
             snap.forEach(qDoc => {
                 const q = qDoc.data();
-                const options = q.type === 'typing' ? 'N/A (Short Answer)' : q.options.join(', ');
-                tableData.push([i++, q.text, options, q.correct, q.points]);
+                let optionsText = "";
+                if (q.type === 'mcq' && q.options) {
+                    optionsText = `A) ${q.options[0]}\nB) ${q.options[1]}\nC) ${q.options[2]}\nD) ${q.options[3]}`;
+                } else {
+                    optionsText = "[Short Answer]";
+                }
+                tableData.push([i++, q.text, optionsText, q.correct, q.points]);
             });
 
             doc.autoTable({
-                startY: 35,
-                head: [['#', 'Question', 'Options', 'Correct Ans', 'Pts']],
+                startY: 30,
+                head: [['#', 'Question', 'Options', 'Ans', 'Pts']],
                 body: tableData,
-                theme: 'striped',
-                headStyles: { fillColor: [79, 70, 229], fontSize: 10, cellPadding: 4 },
+                theme: 'grid',
+                headStyles: { fillColor: [79, 70, 229] },
+                styles: { fontSize: 9, cellPadding: 3, overflow: 'linebreak' },
                 columnStyles: {
-                    1: { columnWidth: 70 }, // Question column
-                    2: { columnWidth: 50 }, // Options column
-                },
-                styles: { fontSize: 9, cellPadding: 3, overflow: 'linebreak' }
+                    1: { cellWidth: 70 }, // Question column
+                    2: { cellWidth: 50 }, // Options column
+                }
             });
-            
-            doc.save('CWSE_Question_Bank.pdf');
+            doc.save('Question_Bank.pdf');
         }
 
         function logout() { auth.signOut(); }
